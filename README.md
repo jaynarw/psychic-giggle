@@ -23,7 +23,7 @@ npm start
 To build the extension, run the command in Extension directory
 
 ```
-npm install
+npm run build
 npm start
 ```
 
