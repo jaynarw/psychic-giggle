@@ -24,8 +24,15 @@ To build the extension, run the command in Extension directory
 
 ```
 npm install
-npm start
+npm run build
 ```
+To build the extension for development, run the following command in `Extension` directory
+
+```
+npm install
+npm run dev-build
+```
+
 
 Load the extension from build directory into chrome.
 
