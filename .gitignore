@@ -120,3 +120,5 @@ dist
 **/.DS_Store
 ._.DS_Store
 **/._.DS_Store
+
+Extension/dist
