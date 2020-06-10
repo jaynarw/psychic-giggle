@@ -1,47 +1,41 @@
-const chatBox = document.createElement('div');
-chatBox.className = 'chat-here';
-chatBox.id = 'psychick';
-chatBox.style.backgroundColor = 'white';
-chatBox.style.right = '0';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import ChatBox from './components/ChatBox';
 
-const inputTime = document.createElement('input');
-inputTime.className = 'time-disp';
-chatBox.appendChild(inputTime);
-
-const playerSet = document.getElementById('dv-web-player');
+let playerSet;
 let sdk;
 let video;
 let videoExists;
+let nowPlaying = '';
 
-function setTime(event) {
-  inputTime.value = event.target.currentTime;
-}
+const chatBoxContainer = document.createElement('div');
+chatBoxContainer.id = 'psychic-giggler';
 
 function check() {
-  videoExists = window.getComputedStyle(playerSet).display !== 'none';
-  if (videoExists) {
-    [sdk] = document.getElementsByClassName('webPlayerSDKContainer');
-    if (sdk && !sdk.contains(chatBox)) {
-      [video] = sdk.getElementsByTagName('video');
-      if (video) {
-        sdk.childNodes.forEach((elt) => {
-          elt.style.setProperty('width', '80%', 'important');
-        });
-        sdk.appendChild(chatBox);
-        chatBox.style.position = 'fixed';
-        chatBox.style.width = '20%';
-        chatBox.style.height = '100%';
-        video.addEventListener('timeupdate', setTime);
+  playerSet = document.getElementById('dv-web-player');
+  if (playerSet) {
+    videoExists = window.getComputedStyle(playerSet).display !== 'none';
+    if (videoExists) {
+      [sdk] = document.getElementsByClassName('webPlayerSDKContainer');
+      if (sdk && !sdk.contains(chatBoxContainer)) {
+        const nowPlayingElt = sdk.querySelector('.fgzdi7m.f10ip5t1.fs89ngr');
+        if (nowPlayingElt) nowPlaying = nowPlayingElt.textContent;
+        [video] = sdk.getElementsByTagName('video');
+        if (video && nowPlaying.length > 0) {
+          sdk.childNodes.forEach((elt) => {
+            elt.style.setProperty('width', '80%', 'important');
+          });
+          sdk.appendChild(chatBoxContainer);
+          ReactDOM.render(<ChatBox nowPlaying={nowPlaying} />, chatBoxContainer);
+        }
       }
+    } else if (sdk && sdk.contains(chatBoxContainer)) {
+      ReactDOM.unmountComponentAtNode(chatBoxContainer);
+      sdk.removeChild(chatBoxContainer);
+      sdk.childNodes.forEach((elt) => {
+        elt.style.setProperty('width', '100%', 'important');
+      });
     }
-  } else if (sdk && sdk.contains(chatBox)) {
-    if (video) {
-      video.removeEventListener('timeupdate', setTime);
-    }
-    sdk.removeChild(chatBox);
-    sdk.childNodes.forEach((elt) => {
-      elt.style.setProperty('width', '100%', 'important');
-    });
   }
 }
 
