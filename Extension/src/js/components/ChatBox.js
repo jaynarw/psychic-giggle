@@ -1,6 +1,10 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
+import { Skeleton, Layout } from 'antd';
+import 'antd/dist/antd.css';
 import './chatbox.css';
+
+const { Header, Content } = Layout;
 
 class ChatBox extends React.Component {
   constructor(props) {
@@ -40,8 +44,15 @@ class ChatBox extends React.Component {
     const { nowPlaying, playingTime } = { ...this.state };
     return (
       <div id="psychick" className="chat-here">
-        <div>{nowPlaying}</div>
-        <input readOnly className="time-disp" value={playingTime} />
+        <Layout>
+          <Header />
+          <Content style={{ backgroundColor: 'white' }}>
+            <Skeleton active loading={playingTime === 0} paragraph={{ rows: 1 }}>
+              <div>{nowPlaying}</div>
+              <input readOnly className="time-disp" value={playingTime} />
+            </Skeleton>
+          </Content>
+        </Layout>
       </div>
     );
   }
