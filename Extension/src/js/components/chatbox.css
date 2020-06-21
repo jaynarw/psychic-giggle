@@ -9,3 +9,9 @@
   height: 100%;
   right: 0;
 }
+.send-message {
+  padding: 10px;
+}
+#message-text {
+  resize: none;
+}

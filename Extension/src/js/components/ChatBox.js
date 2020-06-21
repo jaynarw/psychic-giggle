@@ -1,10 +1,14 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
-import { Skeleton, Layout } from 'antd';
+import * as io from 'socket.io-client';
+import {
+  Skeleton, Layout, Row, Col, Button,
+} from 'antd';
+// import ChatTextArea from './ChatTextArea';
 import 'antd/dist/antd.css';
 import './chatbox.css';
 
-const { Header, Content } = Layout;
+const { Header, Content, Footer } = Layout;
 
 class ChatBox extends React.Component {
   constructor(props) {
@@ -14,7 +18,14 @@ class ChatBox extends React.Component {
       nowPlaying,
       playingTime: 0,
       currentVideo: null,
+      othersConnected: false,
+      sessionCreated: false,
+      createdSession: '',
+      joinSession: '',
+      message: '',
+      receivedMsgs: [],
     };
+    this.socket = io('https://e3fba8edfad4.ngrok.io');
     this.updatePlayingTime = this.updatePlayingTime.bind(this);
   }
 
@@ -27,6 +38,11 @@ class ChatBox extends React.Component {
         video.addEventListener('timeupdate', this.updatePlayingTime);
       }
     }
+    this.socket.on('msg-recieved', (data) => {
+      const { receivedMsgs } = { ...this.state };
+      receivedMsgs.push(data);
+      this.setState({ receivedMsgs });
+    });
   }
 
   componentWillUnmount() {
@@ -40,18 +56,56 @@ class ChatBox extends React.Component {
     this.setState({ playingTime: event.target.currentTime });
   }
 
+  createSession(event) {
+    this.socket.emit('create session', (data) => {
+      this.setState({ createdSession: data });
+    });
+  }
+
+  handleChange(event) {
+    const { target } = event;
+    const { value, name } = target;
+    this.setState({ [name]: value });
+  }
+
+  joinSessionHandler(event) {
+    const { joinSession } = { ...this.state };
+    this.socket.emit('join session', joinSession);
+  }
+
+  sendMessage(event) {
+    const { message } = { ...this.state };
+    event.preventDefault();
+    this.socket.emit('msg', { message });
+    this.setState({ message: '' });
+  }
+
   render() {
-    const { nowPlaying, playingTime } = { ...this.state };
+    const {
+      nowPlaying, playingTime, createdSession, joinSession, message, receivedMsgs,
+    } = { ...this.state };
     return (
       <div id="psychick" className="chat-here">
-        <Layout>
+        <Layout style={{ height: '100%' }}>
           <Header />
           <Content style={{ backgroundColor: 'white' }}>
             <Skeleton active loading={playingTime === 0} paragraph={{ rows: 1 }}>
               <div>{nowPlaying}</div>
               <input readOnly className="time-disp" value={playingTime} />
             </Skeleton>
+            <Row>
+              <Button type="primary" onClick={(e) => this.createSession(e)}>Create Session</Button>
+              <Button type="primary" onClick={(e) => this.joinSessionHandler(e)}>Join Session</Button>
+            </Row>
+            <Row>
+              <input readOnly id="create-session-id" defaultValue={createdSession} />
+              <input id="join-session-id" type="text" name="joinSession" onChange={(e) => this.handleChange(e)} value={joinSession} />
+            </Row>
+            {receivedMsgs.map((messageData) => <li>{messageData.message}</li>)}
           </Content>
+          <form className="send-message" onSubmit={(e) => this.sendMessage(e)}>
+            <input id="msg" type="text" name="message" onChange={(e) => this.handleChange(e)} value={message} />
+          </form>
         </Layout>
       </div>
     );
