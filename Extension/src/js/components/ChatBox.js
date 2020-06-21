@@ -25,7 +25,7 @@ class ChatBox extends React.Component {
       message: '',
       receivedMsgs: [],
     };
-    this.socket = io('https://e3fba8edfad4.ngrok.io');
+    this.socket = io('http://localhost');
     this.updatePlayingTime = this.updatePlayingTime.bind(this);
   }
 
@@ -36,6 +36,8 @@ class ChatBox extends React.Component {
       if (video) {
         this.setState({ currentVideo: video });
         video.addEventListener('timeupdate', this.updatePlayingTime);
+        video.addEventListener('pause', (e) => this.handleVideoEvents(e));
+        video.addEventListener('play', (e) => this.handleVideoEvents(e));
       }
     }
     this.socket.on('msg-recieved', (data) => {
@@ -43,12 +45,38 @@ class ChatBox extends React.Component {
       receivedMsgs.push(data);
       this.setState({ receivedMsgs });
     });
+    this.socket.on('perform sync', (data) => {
+      const { currentVideo } = {...this.state};
+      switch (data.type) {
+        case 'PAUSE':
+          currentVideo.pause();
+          break;
+        case 'PLAY':
+          currentVideo.play();
+          break;
+        default:
+          //do nothing
+      }
+    });
   }
 
   componentWillUnmount() {
     const { currentVideo } = { ...this.state };
     if (currentVideo) {
       currentVideo.removeEventListener('timeupdate', this.updatePlayingTime);
+    }
+  }
+
+  handleVideoEvents(event) {
+    switch (event.type) {
+      case 'pause':
+        this.socket.emit('client sync', {type : 'PAUSE'});
+        break;
+      case 'play':
+        this.socket.emit('client sync', {type : 'PLAY'});
+        break;
+      default:
+        // do nothing
     }
   }
 
