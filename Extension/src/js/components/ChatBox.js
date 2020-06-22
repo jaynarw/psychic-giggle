@@ -4,7 +4,6 @@ import * as io from 'socket.io-client';
 import {
   Skeleton, Layout, Row, Col, Button,
 } from 'antd';
-// import ChatTextArea from './ChatTextArea';
 import 'antd/dist/antd.css';
 import './chatbox.css';
 
@@ -40,13 +39,30 @@ class ChatBox extends React.Component {
         video.addEventListener('play', (e) => this.handleVideoEvents(e));
       }
     }
+
     this.socket.on('msg-recieved', (data) => {
       const { receivedMsgs } = { ...this.state };
       receivedMsgs.push(data);
       this.setState({ receivedMsgs });
     });
+    this.socket.on('send time', () => {
+      const { currentVideo } = { ...this.state };
+      if (currentVideo) this.socket.emit('rec time', { time: currentVideo.currentTime, paused: currentVideo.paused });
+    });
+    this.socket.on('set time', (state) => {
+      const { currentVideo } = { ...this.state };
+      if (currentVideo) {
+        currentVideo.currentTime = state.time;
+        if (state.paused) {
+          currentVideo.pause();
+        } else {
+          currentVideo.play();
+        }
+      }
+    });
+
     this.socket.on('perform sync', (data) => {
-      const { currentVideo } = {...this.state};
+      const { currentVideo } = { ...this.state };
       switch (data.type) {
         case 'PAUSE':
           currentVideo.pause();
@@ -55,9 +71,21 @@ class ChatBox extends React.Component {
           currentVideo.play();
           break;
         default:
-          //do nothing
+          // do nothing
       }
     });
+
+    // this.socket.on('get time', () => {
+    //   const { playingTime } = { ...this.state };
+    //   this.socket.emit('rec time', playingTime);
+    //   console.log('chat');
+    // });
+
+    // this.socket.on('sync video', (data) => {
+    //   const { currentVideo } = {...this.state};
+    //   currentVideo.currentTime = data;
+
+    // });
   }
 
   componentWillUnmount() {
@@ -70,10 +98,10 @@ class ChatBox extends React.Component {
   handleVideoEvents(event) {
     switch (event.type) {
       case 'pause':
-        this.socket.emit('client sync', {type : 'PAUSE'});
+        this.socket.emit('client sync', { type: 'PAUSE' });
         break;
       case 'play':
-        this.socket.emit('client sync', {type : 'PLAY'});
+        this.socket.emit('client sync', { type: 'PLAY' });
         break;
       default:
         // do nothing
@@ -97,8 +125,10 @@ class ChatBox extends React.Component {
   }
 
   joinSessionHandler(event) {
-    const { joinSession } = { ...this.state };
-    this.socket.emit('join session', joinSession);
+    const { joinSession, currentVideo } = { ...this.state };
+    this.socket.emit('join session', joinSession, (isValid) => {
+      if (isValid) this.socket.emit('sync time');
+    });
   }
 
   sendMessage(event) {
