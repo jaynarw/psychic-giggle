@@ -22,9 +22,6 @@ const socketSessionMap = {};
 const syncTimeSockets = {};
 
 io.on('connection', (socket) => {
-  socket.on('disconnect', () => {
-    console.log(`${socket.id} disconnexted`);
-  });
   socket.on('msg', (data) => {
     const socketId = socket.id;
     if (typeof socketSessionMap[socketId] === 'string' && liveSessions[socketSessionMap[socketId]] === true) {
