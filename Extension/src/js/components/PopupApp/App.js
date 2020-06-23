@@ -1,4 +1,8 @@
 import React from 'react';
+import {
+  Input,
+} from 'antd';
+import 'antd/dist/antd.less';
 
 class App extends React.Component {
   constructor(props) {
@@ -21,12 +25,13 @@ class App extends React.Component {
       <form action="http://localhost/signup" method="post">
         <label>
           Name:
-          <input type="text" name="username" onChange={this.handleChange} value={this.state.username} />
+          <Input type="text" name="username" onChange={this.handleChange} value={this.state.username} />
         </label>
         <label>
           Password:
-          <input type="password" name="password" onChange={this.handleChange} value={this.state.password} />
+          <Input type="password" name="password" onChange={this.handleChange} value={this.state.password} />
         </label>
+        <Input size="large" placeholder="Type here" />
         <input type="submit" value="Submit" />
       </form>
     );

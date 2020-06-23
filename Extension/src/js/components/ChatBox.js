@@ -2,12 +2,14 @@
 import React from 'react';
 import * as io from 'socket.io-client';
 import {
-  Skeleton, Layout, Row, Col, Button,
+  Skeleton, Button, Row,
 } from 'antd';
-import 'antd/dist/antd.css';
+// import 'antd/dist/antd.less';
+import 'antd/lib/button/style/index.less';
+import 'antd/lib/skeleton/style/index.less';
+import 'antd/lib/layout/style/index.less';
+import 'antd/lib/grid/style/index.less';
 import './chatbox.css';
-
-const { Header, Content, Footer } = Layout;
 
 class ChatBox extends React.Component {
   constructor(props) {
@@ -21,10 +23,12 @@ class ChatBox extends React.Component {
       sessionCreated: false,
       createdSession: '',
       joinSession: '',
+      username: '',
       message: '',
       receivedMsgs: [],
     };
     this.socket = io('http://localhost');
+    this.performSync = true;
     this.updatePlayingTime = this.updatePlayingTime.bind(this);
   }
 
@@ -42,7 +46,7 @@ class ChatBox extends React.Component {
 
     this.socket.on('msg-recieved', (data) => {
       const { receivedMsgs } = { ...this.state };
-      receivedMsgs.push(data);
+      receivedMsgs.unshift(data);
       this.setState({ receivedMsgs });
     });
     this.socket.on('send time', () => {
@@ -65,9 +69,11 @@ class ChatBox extends React.Component {
       const { currentVideo } = { ...this.state };
       switch (data.type) {
         case 'PAUSE':
+          this.performSync = false;
           currentVideo.pause();
           break;
         case 'PLAY':
+          this.performSync = false;
           currentVideo.play();
           break;
         default:
@@ -98,10 +104,12 @@ class ChatBox extends React.Component {
   handleVideoEvents(event) {
     switch (event.type) {
       case 'pause':
-        this.socket.emit('client sync', { type: 'PAUSE' });
+        if (this.performSync) this.socket.emit('client sync', { type: 'PAUSE' });
+        else this.performSync = true;
         break;
       case 'play':
-        this.socket.emit('client sync', { type: 'PLAY' });
+        if (this.performSync) this.socket.emit('client sync', { type: 'PLAY' });
+        else this.performSync = true;
         break;
       default:
         // do nothing
@@ -132,39 +140,47 @@ class ChatBox extends React.Component {
   }
 
   sendMessage(event) {
-    const { message } = { ...this.state };
+    const { message, username } = { ...this.state };
     event.preventDefault();
-    this.socket.emit('msg', { message });
+    this.socket.emit('msg', { from: username, message });
     this.setState({ message: '' });
   }
 
   render() {
     const {
-      nowPlaying, playingTime, createdSession, joinSession, message, receivedMsgs,
+      nowPlaying, playingTime, createdSession, joinSession, message, receivedMsgs, username,
     } = { ...this.state };
     return (
       <div id="psychick" className="chat-here">
-        <Layout style={{ height: '100%' }}>
-          <Header />
-          <Content style={{ backgroundColor: 'white' }}>
-            <Skeleton active loading={playingTime === 0} paragraph={{ rows: 1 }}>
-              <div>{nowPlaying}</div>
-              <input readOnly className="time-disp" value={playingTime} />
-            </Skeleton>
-            <Row>
-              <Button type="primary" onClick={(e) => this.createSession(e)}>Create Session</Button>
-              <Button type="primary" onClick={(e) => this.joinSessionHandler(e)}>Join Session</Button>
-            </Row>
-            <Row>
-              <input readOnly id="create-session-id" defaultValue={createdSession} />
-              <input id="join-session-id" type="text" name="joinSession" onChange={(e) => this.handleChange(e)} value={joinSession} />
-            </Row>
-            {receivedMsgs.map((messageData) => <li>{messageData.message}</li>)}
-          </Content>
-          <form className="send-message" onSubmit={(e) => this.sendMessage(e)}>
-            <input id="msg" type="text" name="message" onChange={(e) => this.handleChange(e)} value={message} />
-          </form>
-        </Layout>
+        <div id="header" />
+        <div style={{ padding: '10px' }}>
+          <Skeleton active loading={playingTime === 0} paragraph={{ rows: 1 }}>
+            <div>{nowPlaying}</div>
+            <input readOnly className="time-disp" value={playingTime} />
+          </Skeleton>
+          <Row>
+            <Button type="primary" onClick={(e) => this.createSession(e)}>Create Session</Button>
+            <Button type="primary" onClick={(e) => this.joinSessionHandler(e)}>Join Session</Button>
+          </Row>
+          <Row>
+            <input readOnly id="create-session-id" defaultValue={createdSession} />
+            <input id="set-username" value={username} onChange={(e) => this.handleChange(e)} name="username" />
+            <input id="join-session-id" type="text" name="joinSession" onChange={(e) => this.handleChange(e)} value={joinSession} />
+          </Row>
+        </div>
+        <div id="chat-message-list">
+          {receivedMsgs.map((messageData) => (
+            <div className={`message-row ${messageData.from === username ? 'you-message' : 'other-message'}`}>
+              {messageData.from !== username && <div className="message-from">{messageData.from}</div>}
+              <div className="message-text">
+                {messageData.message}
+              </div>
+            </div>
+          ))}
+        </div>
+        <form className="send-message" onSubmit={(e) => this.sendMessage(e)}>
+          <input placeholder="Type a chat message" id="msg" type="text" name="message" onChange={(e) => this.handleChange(e)} value={message} />
+        </form>
       </div>
     );
   }
