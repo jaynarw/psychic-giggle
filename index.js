@@ -72,4 +72,9 @@ io.on('connection', (socket) => {
       socket.to(socketSessionMap[socketId]).emit('perform sync', data);
     }
   });
+  socket.on('disconnect', () => {
+    if (typeof socketSessionMap[socket.id] === 'string' && liveSessions[socketSessionMap[socket.id]] === true) {
+      delete socketSessionMap[socket.id];
+    }
+  });
 });

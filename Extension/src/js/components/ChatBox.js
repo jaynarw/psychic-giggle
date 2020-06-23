@@ -29,6 +29,7 @@ class ChatBox extends React.Component {
     };
     this.socket = io('http://localhost');
     this.performSync = true;
+    this.seek = true;
     this.updatePlayingTime = this.updatePlayingTime.bind(this);
   }
 
@@ -41,9 +42,9 @@ class ChatBox extends React.Component {
         video.addEventListener('timeupdate', this.updatePlayingTime);
         video.addEventListener('pause', (e) => this.handleVideoEvents(e));
         video.addEventListener('play', (e) => this.handleVideoEvents(e));
+        video.addEventListener('seeked', (e) => this.handleVideoEvents(e));
       }
     }
-
     this.socket.on('msg-recieved', (data) => {
       const { receivedMsgs } = { ...this.state };
       receivedMsgs.unshift(data);
@@ -57,10 +58,14 @@ class ChatBox extends React.Component {
       const { currentVideo } = { ...this.state };
       if (currentVideo) {
         currentVideo.currentTime = state.time;
-        if (state.paused) {
-          currentVideo.pause();
-        } else {
-          currentVideo.play();
+        if (state.paused !== currentVideo.paused) {
+          if (state.paused) {
+            currentVideo.pause();
+            this.performSync = false;
+          } else {
+            currentVideo.play();
+            this.performSync = false;
+          }
         }
       }
     });
@@ -71,27 +76,22 @@ class ChatBox extends React.Component {
         case 'PAUSE':
           this.performSync = false;
           currentVideo.pause();
+          this.performSync = false;
           break;
         case 'PLAY':
           this.performSync = false;
           currentVideo.play();
+          this.performSync = false;
+          break;
+        case 'SEEKED':
+          currentVideo.currentTime = data.value;
+          this.seek = false;
+          // currentVideo.play();
           break;
         default:
           // do nothing
       }
     });
-
-    // this.socket.on('get time', () => {
-    //   const { playingTime } = { ...this.state };
-    //   this.socket.emit('rec time', playingTime);
-    //   console.log('chat');
-    // });
-
-    // this.socket.on('sync video', (data) => {
-    //   const { currentVideo } = {...this.state};
-    //   currentVideo.currentTime = data;
-
-    // });
   }
 
   componentWillUnmount() {
@@ -99,9 +99,11 @@ class ChatBox extends React.Component {
     if (currentVideo) {
       currentVideo.removeEventListener('timeupdate', this.updatePlayingTime);
     }
+    this.socket.disconnect();
   }
 
   handleVideoEvents(event) {
+    const { currentVideo } = { ...this.state };
     switch (event.type) {
       case 'pause':
         if (this.performSync) this.socket.emit('client sync', { type: 'PAUSE' });
@@ -110,6 +112,10 @@ class ChatBox extends React.Component {
       case 'play':
         if (this.performSync) this.socket.emit('client sync', { type: 'PLAY' });
         else this.performSync = true;
+        break;
+      case 'seeked':
+        if (this.seek) this.socket.emit('client sync', { type: 'SEEKED', value: currentVideo.currentTime });
+        else this.seek = true;
         break;
       default:
         // do nothing
@@ -133,7 +139,7 @@ class ChatBox extends React.Component {
   }
 
   joinSessionHandler(event) {
-    const { joinSession, currentVideo } = { ...this.state };
+    const { joinSession } = { ...this.state };
     this.socket.emit('join session', joinSession, (isValid) => {
       if (isValid) this.socket.emit('sync time');
     });
