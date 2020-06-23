@@ -75,6 +75,7 @@ class ChatBox extends React.Component {
         case 'SEEKED':
           currentVideo.currentTime = data.value;
           this.seek = false;
+          // currentVideo.play();
           break;
         default:
           // do nothing
@@ -87,6 +88,8 @@ class ChatBox extends React.Component {
     if (currentVideo) {
       currentVideo.removeEventListener('timeupdate', this.updatePlayingTime);
     }
+    this.socket.emit('disconnecting');
+    this.socket.close();
   }
 
   handleVideoEvents(event) {
