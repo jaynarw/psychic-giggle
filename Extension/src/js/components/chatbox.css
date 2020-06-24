@@ -5,6 +5,22 @@
   width: 100%;
   height: 100%;
 }
+#psychick ul{
+  padding: unset;
+  margin: unset;
+}
+#psychick input {
+  padding: unset;
+  font-family: unset;
+  background-position: unset;
+  background-repeat: unset;
+  -webkit-appearance: unset;
+  background-image: unset;
+}
+.emoji-mart-search input {
+  padding: 5px 25px 6px 10px!important;
+}
+
 #psychic-giggler {
   position: fixed;
   width: 20%;
@@ -16,15 +32,26 @@
   margin: 0;
   grid-row: 20 / 20;
   display: grid;
+  grid-template-areas: "emoji-picker message-input";
+  grid-template-columns: 1fr 9fr;
   align-items: center;
   background-color: #373737;
 }
-.send-message input {
+.send-message input#msg {
   color: rgba(255, 255, 255, 0.87);
+  grid-area: message-input;
   border: none;
   outline: none;
   background-color: #373737!important;
   padding: 4px 4px 3px 4px!important;
+}
+#emoji-picker {
+  grid-area: emoji-picker;
+  cursor: pointer;
+}
+#emoji-picker svg {
+  fill: currentColor;
+  color: #858585;
 }
 #chat-message-list {
   display: flex;
@@ -52,4 +79,8 @@
   border-radius: 2px;
   background-color: #242424;
   word-break: break-word
+}
+.emoji-picker-wrapper {
+  position: absolute;
+  bottom: 50px;
 }
