@@ -11,6 +11,12 @@ mongoose.connect('mongodb://localhost/test', { useNewUrlParser: true, useUnified
 app.get('/', (req, res) => {
   res.sendFile(`${__dirname}/www/index.html`);
 });
+app.get('/audio', (req, res) => {
+  res.sendFile(`${__dirname}/www/audio.html`);
+});
+app.get('/audio.js', (req, res) => {
+  res.sendFile(`${__dirname}/www/audio.js`);
+});
 app.get('/js/socket.io.js', (req, res) => {
   res.sendFile(`${__dirname}/node_modules/socket.io-client/dist/socket.io.js`);
 });
@@ -49,12 +55,16 @@ io.on('connection', (socket) => {
     }
   });
   socket.on('create session', (fn) => {
-    const newSession = uuidv4();
-    liveSessions[newSession] = true;
-    socket.join(newSession);
     const socketId = socket.id;
-    socketSessionMap[socketId] = newSession;
-    fn(newSession);
+    if (socketSessionMap[socketId]) {
+      fn(socketSessionMap[socketId]);
+    } else {
+      const newSession = uuidv4();
+      liveSessions[newSession] = true;
+      socket.join(newSession);
+      socketSessionMap[socketId] = newSession;
+      fn(newSession);
+    }
   });
   socket.on('join session', (data, fn) => {
     if (typeof data === 'string' && liveSessions[data] === true) {
@@ -76,5 +86,63 @@ io.on('connection', (socket) => {
     if (typeof socketSessionMap[socket.id] === 'string' && liveSessions[socketSessionMap[socket.id]] === true) {
       delete socketSessionMap[socket.id];
     }
+  });
+});
+let activeAudioSockets = [];
+const audioNsp = io.of('/audio');
+audioNsp.on('connection', (socket) => {
+  const existingSocket = activeAudioSockets.find(
+    (existingSocket) => existingSocket === socket.id,
+  );
+
+  if (!existingSocket) {
+    activeAudioSockets.push(socket.id);
+
+    socket.emit('update-user-list', {
+      users: activeAudioSockets.filter(
+        (existingSocket) => existingSocket !== socket.id,
+      ),
+    });
+
+    socket.broadcast.emit('update-user-list', {
+      users: [socket.id],
+    });
+  }
+
+  //  break;
+  socket.on('offer', (data) => {
+    if (activeAudioSockets.includes(data.target)) {
+      audioNsp.to(data.target).emit('offer', {
+        sdp: data.sdp,
+        name: socket.id,
+      });
+    }
+  });
+  socket.on('answer', (data) => {
+    if (activeAudioSockets.includes(data.target)) {
+      audioNsp.to(data.target).emit('answer', { sdp: data.sdp });
+    } else {
+      console.log('Not found socket answer', data.target);
+    }
+  });
+  socket.on('candidate', (data) => {
+    if (activeAudioSockets.includes(data.target)) {
+      audioNsp.to(data.target).emit('candidate', { candidate: data.candidate });
+    } else {
+      console.log('Not found socket cnd', data.target);
+    }
+  });
+  socket.on('leave', (data) => {
+    if (activeAudioSockets.includes(data.socketid)) {
+      audioNsp.to(data.socketid).emit('leave');
+    }
+  });
+  socket.on('disconnect', () => {
+    activeAudioSockets = activeAudioSockets.filter(
+      (activeSockets) => activeSockets !== socket.id,
+    );
+    socket.broadcast.emit('remove-user', {
+      socketId: socket.id,
+    });
   });
 });
