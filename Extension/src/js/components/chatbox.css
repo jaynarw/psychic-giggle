@@ -41,14 +41,17 @@
   grid-template-areas: "emoji-picker message-input";
   grid-template-columns: 1fr 9fr;
   align-items: center;
-  background-color: #373737;
+  /* background-color: #373737; */
+  background-color: #000;
+  font-size: 14px;
 }
 .send-message input#msg {
   color: rgba(255, 255, 255, 0.87);
   grid-area: message-input;
   border: none;
   outline: none;
-  background-color: #373737!important;
+  /* background-color: #373737!important; */
+  background-color: #000;
   padding: 4px 4px 3px 4px!important;
 }
 #emoji-picker {
@@ -63,7 +66,7 @@
   display: flex;
   flex-direction: column-reverse;
   padding: 10px;
-  grid-row: 3 / 20;
+  grid-row: 1 / 20;
   overflow-y: scroll;
 }
 .message-row {
@@ -83,8 +86,9 @@
   padding: 6px;
   cursor: text;
   border-radius: 2px;
-  background-color: #242424;
-  word-break: break-word
+  background-color: #000;
+  word-break: break-word;
+  font-size: 14px;
 }
 .emoji-picker-wrapper {
   position: absolute;

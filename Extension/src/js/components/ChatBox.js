@@ -153,7 +153,7 @@ class ChatBox extends React.Component {
       nowPlaying, playingTime, currentSession, joinSession, receivedMsgs, nicknameInput, errorMsg,
     } = { ...this.state };
     return (
-      <div id="psychick" className="session-form-enabled">
+      <div id="psychick" className={`${currentSession ? '' : 'session-form-enabled'}`}>
         {!currentSession && (
         <>
           <LoginIllustration />
