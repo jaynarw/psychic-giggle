@@ -28,13 +28,10 @@ class ChatBox extends React.Component {
       isVisible: true,
     };
     this.socket = io('http://localhost');
-    this.performSync = true;
-    this.seek = true;
-<<<<<<< HEAD
+    this.play = true;
+    this.pause = true;
     this.seeking = false;
-=======
     this.visible = true;
->>>>>>> 79f75f363e5b5c9cf041d76c0b617d2050d48a14
     this.updatePlayingTime = this.updatePlayingTime.bind(this);
   }
 
@@ -63,7 +60,6 @@ class ChatBox extends React.Component {
     });
     this.socket.on('left', (data) => {
       const { receivedMsgs } = { ...this.state };
-      console.log('User left');
       receivedMsgs.unshift({ left: data });
       this.setState({ receivedMsgs });
     });
@@ -91,19 +87,15 @@ class ChatBox extends React.Component {
       const { currentVideo } = { ...this.state };
       switch (data.type) {
         case 'PAUSE':
-          this.performSync = false;
+          this.pause = false;
           currentVideo.pause();
-          console.log('paused');
           break;
         case 'PLAY':
-          this.performSync = false;
+          this.play = false;
           currentVideo.play();
-          console.log('played');
           break;
         case 'SEEKING':
-          console.log('Someone is seeking the video...');
           currentVideo.currentTime = data.value;
-          this.seeking = false;
           break;
         default:
           // do nothing
@@ -123,29 +115,25 @@ class ChatBox extends React.Component {
     const { currentVideo } = { ...this.state };
     switch (event.type) {
       case 'pause':
-        if (this.performSync && this.seeking !== true) {
+        if (this.pause && this.seeking !== true) {
           this.socket.emit('client sync', { type: 'PAUSE' });
-          console.log('i was paused');
-        } else this.performSync = true;
+        } else this.pause = true;
         break;
       case 'play':
-        if (this.performSync) {
+        if (this.play && this.seeking !== true) {
           this.socket.emit('client sync', { type: 'PLAY' });
-          console.log('i was played');
-        } else this.performSync = true;
+        } else this.play = true;
         break;
       case 'seeked':
         if (this.seeking) {
-          console.log('i have seeked');
           this.seeking = false;
         }
         break;
       case 'seeking':
         if (this.seeking !== true) {
-          console.log('i am seeking');
-          this.socket.emit('client sync', { type: 'SEEKING', value: currentVideo.currentTime });
           this.seeking = true;
-        }
+          this.socket.emit('client sync', { type: 'SEEKING', value: currentVideo.currentTime });
+        } else this.seeking = true;
         break;
       default:
         // do nothing
