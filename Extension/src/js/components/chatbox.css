@@ -34,6 +34,7 @@
   height: 100%;
   right: 0;
   border-left: solid 0.5px rgba(255,255,255,0.3);
+  transition: width 0.3s ease-in-out 0s !important;
 }
 .send-message {
   padding: 10px;
@@ -233,7 +234,9 @@
   border-bottom: solid 0.5px rgba(255,255,255,0.1);
 }
 #copy-session {
-  margin-bottom: 4px;
+  transition: background-color .2s ease-in-out!important;
+  width: 90%;
+  text-align: center;
   user-select: none;
   font-weight: 500;
   font-size: 14px;
@@ -241,6 +244,36 @@
   background-color: rgba(0,0,0,0.3);
   cursor: pointer;
 }
+.collapse-btn {
+  width: 20px;
+  cursor: pointer;
+  align-self: center;
+  text-align: center;
+  /* width: 5%; */
+  margin-right: 5%;
+  transition: background-color .2s ease-in-out!important;
+  border-radius: 2px;
+  user-select: none;
+}
+.collapse-btn:hover {
+  background-color: rgba(255,255,255,0.3);
+}
 #copy-session:hover {
   background: #202124;
+}
+.show-hide-button {
+  position: absolute;
+  left: -30px;
+  top: 5px;
+  color: black;
+  cursor: pointer;
+  width: 25px;
+  border-radius: 2px;
+  transition: background-color .2s ease-in-out!important;
+}
+.show-hide-button:hover {
+  background-color: rgba(255,255,255,0.3);
+}
+.show-hide-button svg {
+  fill: rgba(255, 255, 255, 0.87);
 }
