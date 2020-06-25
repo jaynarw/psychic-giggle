@@ -2,6 +2,8 @@
 import React from 'react';
 import * as io from 'socket.io-client';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
+import ReactTooltip from 'react-tooltip';
+import { MdLastPage, MdFirstPage } from 'react-icons/md';
 import Message from './Message';
 import SendMessageForm from './SendMessageForm';
 import LoginIllustration from './LoginIllustration';
@@ -23,11 +25,16 @@ class ChatBox extends React.Component {
       receivedMsgs: [],
       errorMsg: false,
       errorMsgJoin: false,
+      isVisible: true,
     };
     this.socket = io('http://localhost');
     this.performSync = true;
     this.seek = true;
+<<<<<<< HEAD
     this.seeking = false;
+=======
+    this.visible = true;
+>>>>>>> 79f75f363e5b5c9cf041d76c0b617d2050d48a14
     this.updatePlayingTime = this.updatePlayingTime.bind(this);
   }
 
@@ -154,8 +161,8 @@ class ChatBox extends React.Component {
   }
 
   createSession(event) {
-    const { nicknameInput } = { ...this.state };
-    this.socket.emit('create session', nicknameInput, (data) => {
+    const { nicknameInput, nowPlaying } = { ...this.state };
+    this.socket.emit('create session', nicknameInput, nowPlaying, (data) => {
       if (data.success) {
         this.setState({ currentSession: data.session, errorMsg: false });
       } else {
@@ -181,70 +188,103 @@ class ChatBox extends React.Component {
     });
   }
 
+  showHide() {
+    const { isVisible } = { ...this.state };
+    const [sdk] = document.getElementsByClassName('webPlayerSDKContainer');
+    if (isVisible) {
+      sdk.childNodes.forEach((elt) => {
+        elt.style.setProperty('width', '100%', 'important');
+      });
+      document.getElementById('psychic-giggler').style.width = '0%';
+      setTimeout(() => { this.setState({ isVisible: false }); }, 200);
+    } else {
+      sdk.childNodes.forEach((elt) => {
+        elt.style.setProperty('width', '80%', 'important');
+      });
+      document.getElementById('psychic-giggler').style.width = '20%';
+      setTimeout(() => { this.setState({ isVisible: true }); }, 200);
+    }
+  }
+
   render() {
     const {
-      currentSession, receivedMsgs, nicknameInput, errorMsg, errorMsgJoin, joinSessionInput,
+      currentSession, receivedMsgs, nicknameInput, errorMsg, errorMsgJoin, joinSessionInput, isVisible,
     } = { ...this.state };
     return (
-      <div id="psychick" className={`${currentSession ? '' : 'session-form-enabled'}`}>
-        {!currentSession && (
-        <>
-          <LoginIllustration />
-          <div className="card-psychic">
-            <form
-              className="session-form"
-              id="nickname-form"
-              autoComplete="off"
-            >
-              {/* <label htmlFor="username-input" className={errorMsg ? 'nickname-error' : ''}>{`Set your Nickname${errorMsg ? ` - ${errorMsg}` : ''}`}</label> */}
-              <label htmlFor="username-input" className={errorMsg ? 'nickname-error' : ''}>
-                Set your Nickname
-                {errorMsg && <span className="error-desc">{` - ${errorMsg}`}</span>}
+      <>
+        {/* <ReactTooltip place="left" type="light" /> */}
+        { !isVisible
+        && (
+          <>
+            <div className="show-hide-button" data-tip="Show chat" onClick={() => this.showHide()}>
+              <MdFirstPage style={{ width: '100%', height: '100%' }} />
+            </div>
+            <ReactTooltip place="left" type="light" />
+          </>
+        )}
+        <div id="psychick" className={`${currentSession ? '' : 'session-form-enabled'}`}>
+          {!currentSession && (
+          <>
+            <LoginIllustration />
+            <div className="card-psychic">
+              <form
+                className="session-form"
+                id="nickname-form"
+                autoComplete="off"
+              >
+                {/* <label htmlFor="username-input" className={errorMsg ? 'nickname-error' : ''}>{`Set your Nickname${errorMsg ? ` - ${errorMsg}` : ''}`}</label> */}
+                <label htmlFor="username-input" className={errorMsg ? 'nickname-error' : ''}>
+                  Set your Nickname
+                  {errorMsg && <span className="error-desc">{` - ${errorMsg}`}</span>}
+                </label>
+                <input
+                  id="username-input"
+                  name="nicknameInput"
+                  onChange={(e) => this.handleChange(e)}
+                  className="username-input"
+                  value={nicknameInput}
+                />
+              </form>
+            </div>
+            <div className="card-psychic" style={{ padding: '10% 5%' }}>
+              <button type="button" className="session-button" onClick={(e) => this.createSession(e)}>Create Session</button>
+              <div className="or-divider">Or</div>
+              <label htmlFor="join-session-input" className={errorMsgJoin ? 'nickname-error' : ''}>
+                Enter Watch session ID
+                {errorMsgJoin && <span className="error-desc">{` - ${errorMsgJoin}`}</span>}
               </label>
               <input
-                id="username-input"
-                name="nicknameInput"
+                id="join-session-input"
+                name="joinSessionInput"
                 onChange={(e) => this.handleChange(e)}
                 className="username-input"
-                value={nicknameInput}
+                value={joinSessionInput}
+                style={{ marginBottom: '8px' }}
               />
-            </form>
-          </div>
-          <div className="card-psychic" style={{ padding: '10% 5%' }}>
-            <button type="button" className="session-button" onClick={(e) => this.createSession(e)}>Create Session</button>
-            <div className="or-divider">Or</div>
-            <label htmlFor="join-session-input" className={errorMsgJoin ? 'nickname-error' : ''}>
-              Enter Watch session ID
-              {errorMsgJoin && <span className="error-desc">{` - ${errorMsgJoin}`}</span>}
-            </label>
-            <input
-              id="join-session-input"
-              name="joinSessionInput"
-              onChange={(e) => this.handleChange(e)}
-              className="username-input"
-              value={joinSessionInput}
-              style={{ marginBottom: '8px' }}
-            />
-            <button type="button" className="session-button" onClick={(e) => this.joinSessionHandler(e)}>Join Session</button>
-          </div>
-        </>
-        )}
-        {currentSession && (
-        <>
-          <div className="card-psychic session-header">
-            <CopyToClipboard text={currentSession}>
-              <div className="username-input" id="copy-session">
-                Share your session ID with friends
+              <button type="button" className="session-button" onClick={(e) => this.joinSessionHandler(e)}>Join Session</button>
+            </div>
+          </>
+          )}
+          {currentSession && (
+          <>
+            <div className="card-psychic session-header">
+              <div style={{ display: 'flex' }}>
+                <div className="collapse-btn" onClick={() => this.showHide()}><MdLastPage style={{ width: '100%', height: '100%' }} /></div>
+                <CopyToClipboard text={currentSession}>
+                  <div className="username-input" id="copy-session">
+                    Share your session ID
+                  </div>
+                </CopyToClipboard>
               </div>
-            </CopyToClipboard>
-          </div>
-          <div id="chat-message-list">
-            {receivedMsgs.map((messageData) => <Message username={nicknameInput} messageData={messageData} />)}
-          </div>
-          <SendMessageForm username={nicknameInput} socket={this.socket} />
-        </>
-        ) }
-      </div>
+            </div>
+            <div id="chat-message-list">
+              {receivedMsgs.map((messageData) => <Message username={nicknameInput} messageData={messageData} />)}
+            </div>
+            <SendMessageForm username={nicknameInput} socket={this.socket} />
+          </>
+          ) }
+        </div>
+      </>
     );
   }
 }
