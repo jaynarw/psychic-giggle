@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 import * as io from 'socket.io-client';
+import { CopyToClipboard } from 'react-copy-to-clipboard';
 import Message from './Message';
 import SendMessageForm from './SendMessageForm';
 import LoginIllustration from './LoginIllustration';
@@ -18,8 +19,10 @@ class ChatBox extends React.Component {
       currentSession: false,
       joinSession: '',
       nicknameInput: '',
+      joinSessionInput: '',
       receivedMsgs: [],
       errorMsg: false,
+      errorMsgJoin: false,
     };
     this.socket = io('http://localhost');
     this.performSync = true;
@@ -42,6 +45,17 @@ class ChatBox extends React.Component {
     this.socket.on('msg-recieved', (data) => {
       const { receivedMsgs } = { ...this.state };
       receivedMsgs.unshift(data);
+      this.setState({ receivedMsgs });
+    });
+    this.socket.on('joined', (data) => {
+      const { receivedMsgs } = { ...this.state };
+      receivedMsgs.unshift({ joined: data });
+      this.setState({ receivedMsgs });
+    });
+    this.socket.on('left', (data) => {
+      const { receivedMsgs } = { ...this.state };
+      console.log('User left');
+      receivedMsgs.unshift({ left: data });
       this.setState({ receivedMsgs });
     });
     this.socket.on('send time', () => {
@@ -128,7 +142,7 @@ class ChatBox extends React.Component {
     const { nicknameInput } = { ...this.state };
     this.socket.emit('create session', nicknameInput, (data) => {
       if (data.success) {
-        this.setState({ currentSession: data, errorMsg: false });
+        this.setState({ currentSession: data.session, errorMsg: false });
       } else {
         this.displayError(data.error);
       }
@@ -142,15 +156,19 @@ class ChatBox extends React.Component {
   }
 
   joinSessionHandler(event) {
-    const { joinSession } = { ...this.state };
-    this.socket.emit('join session', joinSession, (isValid) => {
-      if (isValid) this.socket.emit('sync time');
+    const { joinSessionInput, nicknameInput, nowPlaying } = { ...this.state };
+    this.socket.emit('join session', joinSessionInput, nicknameInput, nowPlaying, (data) => {
+      if (data.success) {
+        this.socket.emit('sync time');
+        this.setState({ currentSession: joinSessionInput, errorMsgJoin: false, errorMsg: false });
+      } else if (data.error1) this.setState({ errorMsgJoin: data.error1 });
+      else if (data.error2) this.displayError(data.error2);
     });
   }
 
   render() {
     const {
-      nowPlaying, playingTime, currentSession, joinSession, receivedMsgs, nicknameInput, errorMsg,
+      currentSession, receivedMsgs, nicknameInput, errorMsg, errorMsgJoin, joinSessionInput,
     } = { ...this.state };
     return (
       <div id="psychick" className={`${currentSession ? '' : 'session-form-enabled'}`}>
@@ -161,6 +179,7 @@ class ChatBox extends React.Component {
             <form
               className="session-form"
               id="nickname-form"
+              autoComplete="off"
             >
               {/* <label htmlFor="username-input" className={errorMsg ? 'nickname-error' : ''}>{`Set your Nickname${errorMsg ? ` - ${errorMsg}` : ''}`}</label> */}
               <label htmlFor="username-input" className={errorMsg ? 'nickname-error' : ''}>
@@ -179,12 +198,31 @@ class ChatBox extends React.Component {
           <div className="card-psychic" style={{ padding: '10% 5%' }}>
             <button type="button" className="session-button" onClick={(e) => this.createSession(e)}>Create Session</button>
             <div className="or-divider">Or</div>
-            <button type="button" className="session-button">Join Session</button>
+            <label htmlFor="join-session-input" className={errorMsgJoin ? 'nickname-error' : ''}>
+              Enter Watch session ID
+              {errorMsgJoin && <span className="error-desc">{` - ${errorMsgJoin}`}</span>}
+            </label>
+            <input
+              id="join-session-input"
+              name="joinSessionInput"
+              onChange={(e) => this.handleChange(e)}
+              className="username-input"
+              value={joinSessionInput}
+              style={{ marginBottom: '8px' }}
+            />
+            <button type="button" className="session-button" onClick={(e) => this.joinSessionHandler(e)}>Join Session</button>
           </div>
         </>
         )}
         {currentSession && (
         <>
+          <div className="card-psychic session-header">
+            <CopyToClipboard text={currentSession}>
+              <div className="username-input" id="copy-session">
+                Share your session ID with friends
+              </div>
+            </CopyToClipboard>
+          </div>
           <div id="chat-message-list">
             {receivedMsgs.map((messageData) => <Message username={nicknameInput} messageData={messageData} />)}
           </div>

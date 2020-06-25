@@ -1,5 +1,5 @@
 #psychick {
-  background-color: #000;
+  background-color: #121212;
   display: grid;
   grid-template-rows: repeat(20, 1fr);
   width: 100%;
@@ -33,6 +33,7 @@
   width: 20%;
   height: 100%;
   right: 0;
+  border-left: solid 0.5px rgba(255,255,255,0.3);
 }
 .send-message {
   padding: 10px;
@@ -43,12 +44,14 @@
   grid-template-columns: 1fr 9fr;
   align-items: center;
   /* background-color: #373737; */
-  background-color: #000;
+  background-color: #1d1d1f;
   font-size: 14px;
   transition: background-color .2s ease-in-out!important;
+  border-radius: 3px;
 }
 .send-message:focus-within {
-  background-color: #242424;
+  background-color: #000;
+  border: solid 1px #7289da;
 }
 .send-message input#msg {
   transition: background-color .2s ease-in-out!important;
@@ -57,11 +60,11 @@
   border: none;
   outline: none;
   /* background-color: #373737!important; */
-  background-color: #000;
+  background-color: #1d1d1f;
   padding: 4px 4px 3px 4px!important;
 }
 .send-message input#msg:focus {
-  background-color: #242424;
+  background-color: #000;
 }
 #emoji-picker {
   grid-area: emoji-picker;
@@ -75,13 +78,28 @@
   display: flex;
   flex-direction: column-reverse;
   padding: 10px;
-  grid-row: 1 / 20;
+  grid-row: 2 / 20;
   overflow-y: scroll;
 }
 .message-row {
   display: grid;
   grid-template-columns: 70%;
   margin-bottom: 8px;
+}
+.user-conn-row {
+  display: grid;
+  grid-template-columns: 70%;
+  margin-bottom: 8px;
+  justify-content: center;
+  justify-items: center;
+}
+.user-joined-text {
+  font-size: 12px;
+  font-weight: 500;
+}
+.user-left-text {
+  font-size: 12px;
+  font-weight: 500;
 }
 .you-message {
   justify-content: end;
@@ -91,13 +109,17 @@
   justify-content: start;
   justify-items: start;
 }
+.message-from {
+  margin-bottom: 3px;
+}
 .message-text {
   padding: 6px;
   cursor: text;
   border-radius: 2px;
-  background-color: #121212;
+  background-color: #242424;
   word-break: break-word;
   font-size: 14px;
+  box-shadow: rgba(0,0,0, .3) 0 1px 2px 0, rgba(0,0,0, .15) 0 1px 3px 1px;
 }
 .emoji-picker-wrapper {
   position: absolute;
@@ -192,7 +214,7 @@
   width: 90%;
   border-radius: 4px;
   margin-bottom: 15px;
-  box-shadow: rgba(var(--cr-card-shadow-color-rgb), .3) 0 1px 2px 0, rgba(var(--cr-card-shadow-color-rgb), .15) 0 1px 3px 1px;
+  box-shadow: rgba(0,0,0, .3) 0 1px 2px 0, rgba(0,0,0, .15) 0 1px 3px 1px;
 }
 .nickname-error {
   color: #f04747!important;
@@ -202,4 +224,23 @@
   font-size: 13px;
   font-weight: 500;
   font-style: italic;
+}
+.session-header {
+  grid-row: 1;
+  width: 100%;
+  border-radius: 0;
+  background: #121212;
+  border-bottom: solid 0.5px rgba(255,255,255,0.1);
+}
+#copy-session {
+  margin-bottom: 4px;
+  user-select: none;
+  font-weight: 500;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.88);
+  background-color: rgba(0,0,0,0.3);
+  cursor: pointer;
+}
+#copy-session:hover {
+  background: #202124;
 }

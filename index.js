@@ -38,65 +38,87 @@ function validateNickname(nickname) {
 io.on('connection', (socket) => {
   socket.on('msg', (data) => {
     const socketId = socket.id;
-    if (typeof socketSessionMap[socketId] === 'string' && liveSessions[socketSessionMap[socketId]] === true) {
-      io.to(socketSessionMap[socketId]).emit('msg-recieved', data);
+    if (socketSessionMap[socketId] && typeof socketSessionMap[socketId].session === 'string' && liveSessions[socketSessionMap[socketId].session] === true) {
+      io.to(socketSessionMap[socketId].session).emit('msg-recieved', data);
     }
   });
   socket.on('sync time', () => {
     const socketId = socket.id;
-    if (typeof socketSessionMap[socketId] === 'string' && liveSessions[socketSessionMap[socketId]] === true) {
-      if (syncTimeSockets[socketSessionMap[socketId]]) {
-        syncTimeSockets[socketSessionMap[socketId]].push(socketId);
+    if (socketSessionMap[socketId] && typeof socketSessionMap[socketId].session === 'string' && liveSessions[socketSessionMap[socketId].session] === true) {
+      if (syncTimeSockets[socketSessionMap[socketId].session]) {
+        syncTimeSockets[socketSessionMap[socketId].session].push(socketId);
       } else {
-        syncTimeSockets[socketSessionMap[socketId]] = [socketId];
+        syncTimeSockets[socketSessionMap[socketId].session] = [socketId];
       }
-      socket.to(socketSessionMap[socketId]).emit('send time');
+      socket.to(socketSessionMap[socketId].session).emit('send time');
     }
   });
   socket.on('rec time', (state) => {
     const socketId = socket.id;
-    if (typeof socketSessionMap[socketId] === 'string' && liveSessions[socketSessionMap[socketId]] === true && syncTimeSockets[socketSessionMap[socketId]]) {
-      syncTimeSockets[socketSessionMap[socketId]].forEach((sinker) => {
+    if (socketSessionMap[socketId] && typeof socketSessionMap[socketId].session === 'string' && liveSessions[socketSessionMap[socketId].session] === true && syncTimeSockets[socketSessionMap[socketId].session]) {
+      syncTimeSockets[socketSessionMap[socketId].session].forEach((sinker) => {
         io.to(sinker).emit('set time', state);
       });
-      syncTimeSockets[socketSessionMap[socketId]] = undefined;
+      syncTimeSockets[socketSessionMap[socketId].session] = undefined;
     }
   });
   socket.on('create session', (nickname, fn) => {
     if (validateNickname(nickname) === true) {
       const socketId = socket.id;
       if (socketSessionMap[socketId]) {
-        fn(socketSessionMap[socketId]);
+        fn(socketSessionMap[socketId].session);
       } else {
         const newSession = uuidv4();
         liveSessions[newSession] = true;
         socket.join(newSession);
-        socketSessionMap[socketId] = newSession;
+        socketSessionMap[socketId] = { session: newSession, nickname };
         fn({ success: true, session: newSession });
       }
     } else {
       fn({ success: false, error: validateNickname(nickname) });
     }
   });
-  socket.on('join session', (data, fn) => {
-    if (typeof data === 'string' && liveSessions[data] === true) {
-      socket.join(data);
-      const socketId = socket.id;
-      socketSessionMap[socketId] = data;
-      fn(true);
+  // socket.on('join session', (data, fn) => {
+  //   if (typeof data === 'string' && liveSessions[data] === true) {
+  //     socket.join(data);
+  //     const socketId = socket.id;
+  //     socketSessionMap[socketId] = data;
+  //     fn(true);
+  //   } else {
+  //     fn(false);
+  //   }
+  // });
+  socket.on('join session', (data, nickname, currentTitle, fn) => {
+    if (validateNickname(nickname) === true) {
+      if (typeof data === 'string' && liveSessions[data] === true) {
+        console.log(data, nickname, currentTitle);
+        socket.join(data);
+        const socketId = socket.id;
+        socketSessionMap[socketId] = { session: data, nickname };
+        socket.to(data).emit('joined', nickname);
+        fn({ success: true });
+      } else {
+        console.log(data, nickname, currentTitle);
+        fn({ success: false, error1: 'Session ID is invalid' });
+      }
     } else {
-      fn(false);
+      fn({ success: false, error2: validateNickname(nickname) });
     }
   });
   socket.on('client sync', (data) => {
     const socketId = socket.id;
-    if (typeof socketSessionMap[socketId] === 'string' && liveSessions[socketSessionMap[socketId]] === true) {
-      socket.to(socketSessionMap[socketId]).emit('perform sync', data);
+    if (socketSessionMap[socketId] && typeof socketSessionMap[socketId].session === 'string' && liveSessions[socketSessionMap[socketId].session] === true) {
+      socket.to(socketSessionMap[socketId].session).emit('perform sync', data);
     }
   });
   socket.on('disconnect', () => {
-    if (typeof socketSessionMap[socket.id] === 'string' && liveSessions[socketSessionMap[socket.id]] === true) {
-      delete socketSessionMap[socket.id];
+    if (socketSessionMap[socket.id]) {
+      const { session, nickname } = socketSessionMap[socket.id];
+      console.log(`${nickname} disconnected`);
+      io.to(session).emit('left', nickname);
+      if (typeof socketSessionMap[socket.id] === 'string' && liveSessions[socketSessionMap[socket.id]] === true) {
+        delete socketSessionMap[socket.id];
+      }
     }
   });
 });
