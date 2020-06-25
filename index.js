@@ -27,6 +27,14 @@ const liveSessions = {};
 const socketSessionMap = {};
 const syncTimeSockets = {};
 
+function validateNickname(nickname) {
+  if (typeof nickname === 'string') {
+    if (nickname.length === 0) return 'Nickname length should be greater than zero.';
+    if (nickname.length > 15) return 'Nickname length should be less than 15.';
+    return true;
+  } return 'Send me string';
+}
+
 io.on('connection', (socket) => {
   socket.on('msg', (data) => {
     const socketId = socket.id;
@@ -54,16 +62,20 @@ io.on('connection', (socket) => {
       syncTimeSockets[socketSessionMap[socketId]] = undefined;
     }
   });
-  socket.on('create session', (fn) => {
-    const socketId = socket.id;
-    if (socketSessionMap[socketId]) {
-      fn(socketSessionMap[socketId]);
+  socket.on('create session', (nickname, fn) => {
+    if (validateNickname(nickname) === true) {
+      const socketId = socket.id;
+      if (socketSessionMap[socketId]) {
+        fn(socketSessionMap[socketId]);
+      } else {
+        const newSession = uuidv4();
+        liveSessions[newSession] = true;
+        socket.join(newSession);
+        socketSessionMap[socketId] = newSession;
+        fn({ success: true, session: newSession });
+      }
     } else {
-      const newSession = uuidv4();
-      liveSessions[newSession] = true;
-      socket.join(newSession);
-      socketSessionMap[socketId] = newSession;
-      fn(newSession);
+      fn({ success: false, error: validateNickname(nickname) });
     }
   });
   socket.on('join session', (data, fn) => {
