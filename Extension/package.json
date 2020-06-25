@@ -33,6 +33,7 @@
     "less-loader": "^6.1.2",
     "lodash": "^4.17.15",
     "react": "^16.13.1",
+    "react-copy-to-clipboard": "^5.0.2",
     "react-dom": "^16.13.1",
     "socket.io-client": "^2.3.0"
   }

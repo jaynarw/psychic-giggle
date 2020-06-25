@@ -1,17 +1,11 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
-import { Picker, Emoji } from 'emoji-mart';
 import * as io from 'socket.io-client';
-import {
-  Skeleton, Button, Row,
-} from 'antd';
-// import 'antd/dist/antd.less';
-import 'antd/lib/button/style/index.less';
-import 'antd/lib/skeleton/style/index.less';
-import 'antd/lib/layout/style/index.less';
-import 'antd/lib/grid/style/index.less';
+import { CopyToClipboard } from 'react-copy-to-clipboard';
+import Message from './Message';
+import SendMessageForm from './SendMessageForm';
+import LoginIllustration from './LoginIllustration';
 import './chatbox.css';
-import 'emoji-mart/css/emoji-mart.css';
 
 class ChatBox extends React.Component {
   constructor(props) {
@@ -22,13 +16,13 @@ class ChatBox extends React.Component {
       playingTime: 0,
       currentVideo: null,
       othersConnected: false,
-      sessionCreated: false,
-      createdSession: '',
+      currentSession: false,
       joinSession: '',
-      username: '',
-      message: '',
-      showEmojiPicker: false,
+      nicknameInput: '',
+      joinSessionInput: '',
       receivedMsgs: [],
+      errorMsg: false,
+      errorMsgJoin: false,
     };
     this.socket = io('http://localhost');
     this.performSync = true;
@@ -51,6 +45,17 @@ class ChatBox extends React.Component {
     this.socket.on('msg-recieved', (data) => {
       const { receivedMsgs } = { ...this.state };
       receivedMsgs.unshift(data);
+      this.setState({ receivedMsgs });
+    });
+    this.socket.on('joined', (data) => {
+      const { receivedMsgs } = { ...this.state };
+      receivedMsgs.unshift({ joined: data });
+      this.setState({ receivedMsgs });
+    });
+    this.socket.on('left', (data) => {
+      const { receivedMsgs } = { ...this.state };
+      console.log('User left');
+      receivedMsgs.unshift({ left: data });
       this.setState({ receivedMsgs });
     });
     this.socket.on('send time', () => {
@@ -129,9 +134,18 @@ class ChatBox extends React.Component {
     this.setState({ playingTime: event.target.currentTime });
   }
 
+  displayError(errorMsg) {
+    this.setState({ errorMsg });
+  }
+
   createSession(event) {
-    this.socket.emit('create session', (data) => {
-      this.setState({ createdSession: data });
+    const { nicknameInput } = { ...this.state };
+    this.socket.emit('create session', nicknameInput, (data) => {
+      if (data.success) {
+        this.setState({ currentSession: data.session, errorMsg: false });
+      } else {
+        this.displayError(data.error);
+      }
     });
   }
 
@@ -142,91 +156,81 @@ class ChatBox extends React.Component {
   }
 
   joinSessionHandler(event) {
-    const { joinSession } = { ...this.state };
-    this.socket.emit('join session', joinSession, (isValid) => {
-      if (isValid) this.socket.emit('sync time');
+    const { joinSessionInput, nicknameInput, nowPlaying } = { ...this.state };
+    this.socket.emit('join session', joinSessionInput, nicknameInput, nowPlaying, (data) => {
+      if (data.success) {
+        this.socket.emit('sync time');
+        this.setState({ currentSession: joinSessionInput, errorMsgJoin: false, errorMsg: false });
+      } else if (data.error1) this.setState({ errorMsgJoin: data.error1 });
+      else if (data.error2) this.displayError(data.error2);
     });
-  }
-
-  sendMessage(event) {
-    const { message, username } = { ...this.state };
-    event.preventDefault();
-    if (message && message.length > 0) this.socket.emit('msg', { from: username, message });
-    this.setState({ message: '' });
-  }
-
-  addEmoji(e) {
-    const { message } = { ...this.state };
-    console.log(e);
-    this.setState({ message: `${message} ${e.native} ` });
-  }
-
-  showPicker(e) {
-    this.setState((prevState) => ({ showEmojiPicker: !prevState.showEmojiPicker }));
   }
 
   render() {
     const {
-      nowPlaying, playingTime, createdSession, joinSession, message, receivedMsgs, username, showEmojiPicker,
+      currentSession, receivedMsgs, nicknameInput, errorMsg, errorMsgJoin, joinSessionInput,
     } = { ...this.state };
     return (
-      <div id="psychick" className="chat-here">
-        <div id="header" />
-        <div style={{ padding: '10px' }}>
-          <Skeleton active loading={playingTime === 0} paragraph={{ rows: 1 }}>
-            <div>{nowPlaying}</div>
-            <input readOnly className="time-disp" value={playingTime} />
-          </Skeleton>
-          <Row>
-            <Button type="primary" onClick={(e) => this.createSession(e)}>Create Session</Button>
-            <Button type="primary" onClick={(e) => this.joinSessionHandler(e)}>Join Session</Button>
-          </Row>
-          <Row>
-            <input readOnly id="create-session-id" defaultValue={createdSession} />
-            <input id="set-username" value={username} onChange={(e) => this.handleChange(e)} name="username" />
-            <input id="join-session-id" type="text" name="joinSession" onChange={(e) => this.handleChange(e)} value={joinSession} />
-          </Row>
-        </div>
-        <div id="chat-message-list">
-          {receivedMsgs.map((messageData) => (
-            <div className={`message-row ${messageData.from === username ? 'you-message' : 'other-message'}`}>
-              {messageData.from !== username && <div className="message-from">{messageData.from}</div>}
-              <div className="message-text">
-                {messageData.message}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="message-form-wrapper">
-          {showEmojiPicker && (
-          <div className="emoji-picker-wrapper">
-            <Picker
-              native
-              theme="dark"
-              style={{ width: 'unset', margin: '10px' }}
-              onSelect={(e) => this.addEmoji(e)}
-              emojiTooltip
-              showPreview={false}
-              showSkinTones={false}
-              useButton={false}
-              sheetSize={16}
-            />
+      <div id="psychick" className={`${currentSession ? '' : 'session-form-enabled'}`}>
+        {!currentSession && (
+        <>
+          <LoginIllustration />
+          <div className="card-psychic">
+            <form
+              className="session-form"
+              id="nickname-form"
+              autoComplete="off"
+            >
+              {/* <label htmlFor="username-input" className={errorMsg ? 'nickname-error' : ''}>{`Set your Nickname${errorMsg ? ` - ${errorMsg}` : ''}`}</label> */}
+              <label htmlFor="username-input" className={errorMsg ? 'nickname-error' : ''}>
+                Set your Nickname
+                {errorMsg && <span className="error-desc">{` - ${errorMsg}`}</span>}
+              </label>
+              <input
+                id="username-input"
+                name="nicknameInput"
+                onChange={(e) => this.handleChange(e)}
+                className="username-input"
+                value={nicknameInput}
+              />
+            </form>
           </div>
-          )}
-          <form className="send-message" onSubmit={(e) => this.sendMessage(e)} autoComplete="off">
-            <span id="emoji-picker" onClick={(e) => this.showPicker(e)}>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0m0 22C6.486 22 2 17.514 2 12S6.486 2 12 2s10 4.486 10 10-4.486 10-10 10" />
-                <path d="M8 7a2 2 0 1 0-.001 3.999A2 2 0 0 0 8 7M16 7a2 2 0 1 0-.001 3.999A2 2 0 0 0 16 7M15.232 15c-.693 1.195-1.87 2-3.349 2-1.477 0-2.655-.805-3.347-2H15m3-2H6a6 6 0 1 0 12 0" />
-              </svg>
-            </span>
-            <input placeholder="Type a chat message" id="msg" type="text" name="message" onChange={(e) => this.handleChange(e)} value={message} />
-          </form>
-        </div>
+          <div className="card-psychic" style={{ padding: '10% 5%' }}>
+            <button type="button" className="session-button" onClick={(e) => this.createSession(e)}>Create Session</button>
+            <div className="or-divider">Or</div>
+            <label htmlFor="join-session-input" className={errorMsgJoin ? 'nickname-error' : ''}>
+              Enter Watch session ID
+              {errorMsgJoin && <span className="error-desc">{` - ${errorMsgJoin}`}</span>}
+            </label>
+            <input
+              id="join-session-input"
+              name="joinSessionInput"
+              onChange={(e) => this.handleChange(e)}
+              className="username-input"
+              value={joinSessionInput}
+              style={{ marginBottom: '8px' }}
+            />
+            <button type="button" className="session-button" onClick={(e) => this.joinSessionHandler(e)}>Join Session</button>
+          </div>
+        </>
+        )}
+        {currentSession && (
+        <>
+          <div className="card-psychic session-header">
+            <CopyToClipboard text={currentSession}>
+              <div className="username-input" id="copy-session">
+                Share your session ID with friends
+              </div>
+            </CopyToClipboard>
+          </div>
+          <div id="chat-message-list">
+            {receivedMsgs.map((messageData) => <Message username={nicknameInput} messageData={messageData} />)}
+          </div>
+          <SendMessageForm username={nicknameInput} socket={this.socket} />
+        </>
+        ) }
       </div>
     );
   }
 }
 export default ChatBox;
-// Oka
