@@ -7,6 +7,8 @@ const io = require('socket.io')(http);
 const { v4: uuidv4 } = require('uuid');
 const mongoose = require('mongoose');
 
+const port = process.env.PORT || 80;
+
 mongoose.connect('mongodb://localhost/test', { useNewUrlParser: true, useUnifiedTopology: true });
 
 app.get('/', (req, res) => {
@@ -22,7 +24,7 @@ app.get('/js/socket.io.js', (req, res) => {
   res.sendFile(`${__dirname}/node_modules/socket.io-client/dist/socket.io.js`);
 });
 
-http.listen(80);
+http.listen(port);
 
 const liveSessions = {};
 const socketSessionMap = {};
