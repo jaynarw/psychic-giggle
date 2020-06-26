@@ -1,7 +1,7 @@
 import React from 'react';
 
 function Message(props) {
-  const { messageData, username } = props;
+  const { messageData, userId } = props;
   return (
     <>
       {messageData.joined && (
@@ -16,8 +16,8 @@ function Message(props) {
       )}
       {!messageData.joined && !messageData.left
       && (
-      <div className={`message-row ${messageData.from === username ? 'you-message' : 'other-message'}`}>
-        {messageData.from !== username && <div className="message-from">{messageData.from}</div>}
+      <div className={`message-row ${messageData.from === userId ? 'you-message' : 'other-message'}`}>
+        {messageData.from !== userId && <div className="message-from">{messageData.nickname}</div>}
         <div className="message-text">
           {messageData.message}
         </div>

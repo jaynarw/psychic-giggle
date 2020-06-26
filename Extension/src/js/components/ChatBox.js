@@ -8,6 +8,7 @@ import Message from './Message';
 import SendMessageForm from './SendMessageForm';
 import LoginIllustration from './LoginIllustration';
 import './chatbox.css';
+import VoiceChatter from './VoiceChatter';
 
 class ChatBox extends React.Component {
   constructor(props) {
@@ -15,7 +16,6 @@ class ChatBox extends React.Component {
     const { nowPlaying } = this.props;
     this.state = {
       nowPlaying,
-      playingTime: 0,
       currentVideo: null,
       othersConnected: false,
       currentSession: false,
@@ -26,13 +26,14 @@ class ChatBox extends React.Component {
       errorMsg: false,
       errorMsgJoin: false,
       isVisible: true,
+      liveCalls: {},
+      onlineUsers: [],
     };
     this.socket = io('http://localhost');
     this.play = true;
     this.pause = true;
     this.seeking = false;
     this.visible = true;
-    this.updatePlayingTime = this.updatePlayingTime.bind(this);
   }
 
   componentDidMount() {
@@ -41,13 +42,16 @@ class ChatBox extends React.Component {
       const [video] = sdk.getElementsByTagName('video');
       if (video) {
         this.setState({ currentVideo: video });
-        video.addEventListener('timeupdate', this.updatePlayingTime);
+        // video.addEventListener('timeupdate', this.updatePlayingTime);
         video.addEventListener('pause', (e) => this.handleVideoEvents(e));
         video.addEventListener('play', (e) => this.handleVideoEvents(e));
         video.addEventListener('seeked', (e) => this.handleVideoEvents(e));
         video.addEventListener('seeking', (e) => this.handleVideoEvents(e));
       }
     }
+    this.socket.on('update users list', (onlineUsers) => {
+      this.setState({ onlineUsers });
+    });
     this.socket.on('msg-recieved', (data) => {
       const { receivedMsgs } = { ...this.state };
       receivedMsgs.unshift(data);
@@ -106,7 +110,7 @@ class ChatBox extends React.Component {
   componentWillUnmount() {
     const { currentVideo } = { ...this.state };
     if (currentVideo) {
-      currentVideo.removeEventListener('timeupdate', this.updatePlayingTime);
+      // currentVideo.removeEventListener('timeupdate', this.updatePlayingTime);
     }
     this.socket.disconnect();
   }
@@ -140,9 +144,9 @@ class ChatBox extends React.Component {
     }
   }
 
-  updatePlayingTime(event) {
-    this.setState({ playingTime: event.target.currentTime });
-  }
+  // updatePlayingTime(event) {
+  //   this.setState({ playingTime: event.target.currentTime });
+  // }
 
   displayError(errorMsg) {
     this.setState({ errorMsg });
@@ -194,9 +198,14 @@ class ChatBox extends React.Component {
     }
   }
 
+  updateLiveCalls(liveCalls) {
+    // this.liveCalls = liveCalls;
+    this.setState({ liveCalls });
+  }
+
   render() {
     const {
-      currentSession, receivedMsgs, nicknameInput, errorMsg, errorMsgJoin, joinSessionInput, isVisible,
+      currentSession, receivedMsgs, nicknameInput, errorMsg, errorMsgJoin, joinSessionInput, isVisible, liveCalls, onlineUsers,
     } = { ...this.state };
     return (
       <>
@@ -204,7 +213,12 @@ class ChatBox extends React.Component {
         { !isVisible
         && (
           <>
-            <div className="show-hide-button" data-tip="Show chat" onClick={() => this.showHide()}>
+            <div
+              className="show-hide-button"
+              data-tip="Show chat"
+              onClick={() => this.showHide()}
+              style={{ top: `${document.getElementById('collapse-chat').getBoundingClientRect().y}px` }}
+            >
               <MdFirstPage style={{ width: '100%', height: '100%' }} />
             </div>
             <ReactTooltip place="left" type="light" />
@@ -257,7 +271,7 @@ class ChatBox extends React.Component {
           <>
             <div className="card-psychic session-header">
               <div style={{ display: 'flex' }}>
-                <div className="collapse-btn" onClick={() => this.showHide()}><MdLastPage style={{ width: '100%', height: '100%' }} /></div>
+                <div id="collapse-chat" className="collapse-btn" onClick={() => this.showHide()}><MdLastPage style={{ width: '100%', height: '100%' }} /></div>
                 <CopyToClipboard text={currentSession}>
                   <div className="username-input" id="copy-session">
                     Share your session ID
@@ -265,10 +279,13 @@ class ChatBox extends React.Component {
                 </CopyToClipboard>
               </div>
             </div>
-            <div id="chat-message-list">
-              {receivedMsgs.map((messageData) => <Message username={nicknameInput} messageData={messageData} />)}
+            <div className="card-psychic session-header" style={{ gridRow: 2 }}>
+              <VoiceChatter socket={this.socket} onlineUsers={onlineUsers} liveCalls={liveCalls} updateLiveCalls={(calls) => this.updateLiveCalls(calls)} />
             </div>
-            <SendMessageForm username={nicknameInput} socket={this.socket} />
+            <div id="chat-message-list">
+              {receivedMsgs.map((messageData) => <Message username={nicknameInput} messageData={messageData} userId={this.socket.id} />)}
+            </div>
+            <SendMessageForm socket={this.socket} />
           </>
           ) }
         </div>
