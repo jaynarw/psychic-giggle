@@ -82,7 +82,7 @@
   display: flex;
   flex-direction: column-reverse;
   padding: 10px;
-  grid-row: 2 / 20;
+  grid-row: 3 / 20;
   overflow-y: scroll;
 }
 .message-row {
@@ -235,6 +235,7 @@
   border-radius: 0;
   background: #121212;
   border-bottom: solid 0.5px rgba(255,255,255,0.1);
+  margin-bottom: 0;
 }
 #copy-session {
   transition: background-color .2s ease-in-out!important;
@@ -279,4 +280,22 @@
 }
 .show-hide-button svg {
   fill: rgba(255, 255, 255, 0.87);
+}
+.active-user {
+  vertical-align: middle;
+  border-radius: 4px;
+  position: relative;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color .2s ease-in-out!important;
+  list-style: none;
+  padding: 4px;
+}
+.active-user:hover {
+  background-color: rgb(255,255,255,0.1);
+}
+
+.enable-voice {
+  position: absolute;
+  right: 10px;
 }

@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Jayesh N",
@@ -23,6 +24,7 @@
     "express-session": "^1.17.1",
     "html-loader": "^1.1.0",
     "html-webpack-plugin": "^4.3.0",
+    "lodash": "^4.17.15",
     "mongoose": "^5.9.18",
     "morgan": "^1.10.0",
     "passport": "^0.4.1",

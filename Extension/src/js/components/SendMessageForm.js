@@ -22,9 +22,9 @@ class SendMessageForm extends React.Component {
 
   sendMessage(event) {
     const { message } = { ...this.state };
-    const { username, socket } = this.props;
+    const { socket } = this.props;
     event.preventDefault();
-    if (message && message.length > 0) socket.emit('msg', { from: username, message });
+    if (message && message.length > 0) socket.emit('msg', message);
     this.setState({ message: '' });
   }
 
