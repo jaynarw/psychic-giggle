@@ -204,7 +204,12 @@ class ChatBox extends React.Component {
         { !isVisible
         && (
           <>
-            <div className="show-hide-button" data-tip="Show chat" onClick={() => this.showHide()}>
+            <div
+              className="show-hide-button"
+              data-tip="Show chat"
+              onClick={() => this.showHide()}
+              style={{ top: `${document.getElementById('collapse-chat').getBoundingClientRect().y}px` }}
+            >
               <MdFirstPage style={{ width: '100%', height: '100%' }} />
             </div>
             <ReactTooltip place="left" type="light" />
@@ -257,7 +262,7 @@ class ChatBox extends React.Component {
           <>
             <div className="card-psychic session-header">
               <div style={{ display: 'flex' }}>
-                <div className="collapse-btn" onClick={() => this.showHide()}><MdLastPage style={{ width: '100%', height: '100%' }} /></div>
+                <div id="collapse-chat" className="collapse-btn" onClick={() => this.showHide()}><MdLastPage style={{ width: '100%', height: '100%' }} /></div>
                 <CopyToClipboard text={currentSession}>
                   <div className="username-input" id="copy-session">
                     Share your session ID

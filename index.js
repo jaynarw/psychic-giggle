@@ -109,7 +109,8 @@ io.on('connection', (socket) => {
       const { session, nickname } = socketSessionMap[socket.id];
       console.log(`${nickname} disconnected`);
       io.to(session).emit('left', nickname);
-      if (typeof socketSessionMap[socket.id] === 'string' && liveSessions[socketSessionMap[socket.id]]) {
+      if (typeof socketSessionMap[socket.id].session === 'string' && liveSessions[socketSessionMap[socket.id].session]) {
+        liveSessions[socketSessionMap[socket.id].session].users -= 1;
         delete socketSessionMap[socket.id];
       }
     }
