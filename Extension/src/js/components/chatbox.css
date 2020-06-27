@@ -41,8 +41,8 @@
   margin: 0;
   grid-row: 20 / 20;
   display: grid;
-  grid-template-areas: "emoji-picker message-input";
-  grid-template-columns: 1fr 9fr;
+  grid-template-areas: "message-input emoji-picker";
+  grid-template-columns: 9fr 1fr;
   align-items: center;
   /* background-color: #373737; */
   background-color: #1d1d1f;

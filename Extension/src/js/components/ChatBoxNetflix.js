@@ -8,6 +8,7 @@ import Message from './Message';
 import SendMessageForm from './SendMessageForm';
 import LoginIllustration from './LoginIllustration';
 import './chatbox.css';
+import './chatboxNetflix.css';
 import VoiceChatter from './VoiceChatter';
 
 class ChatBox extends React.Component {
@@ -34,20 +35,20 @@ class ChatBox extends React.Component {
     this.pause = true;
     this.seeking = false;
     this.visible = true;
+    this.handleVideoEvents = this.handleVideoEvents.bind(this);
   }
 
   componentDidMount() {
-    const [sdk] = document.getElementsByClassName('webPlayerSDKContainer');
-    if (sdk) {
-      const [video] = sdk.getElementsByTagName('video');
-      if (video) {
-        this.setState({ currentVideo: video });
-        // video.addEventListener('timeupdate', this.updatePlayingTime);
-        video.addEventListener('pause', (e) => this.handleVideoEvents(e));
-        video.addEventListener('play', (e) => this.handleVideoEvents(e));
-        video.addEventListener('seeked', (e) => this.handleVideoEvents(e));
-        video.addEventListener('seeking', (e) => this.handleVideoEvents(e));
-      }
+    const [video] = document.getElementsByTagName('video');
+    if (video) {
+      this.setState({ currentVideo: video });
+      // video.addEventListener('timeupdate', this.updatePlayingTime);
+      video.addEventListener('pause', this.handleVideoEvents);
+      video.addEventListener('play', this.handleVideoEvents);
+      video.addEventListener('seeked', this.handleVideoEvents);
+      video.addEventListener('seeking', this.handleVideoEvents);
+    } else {
+      console.log('Uh oh video');
     }
     this.socket.on('update users list', (onlineUsers) => {
       this.setState({ onlineUsers });
@@ -110,7 +111,10 @@ class ChatBox extends React.Component {
   componentWillUnmount() {
     const { currentVideo } = { ...this.state };
     if (currentVideo) {
-      // currentVideo.removeEventListener('timeupdate', this.updatePlayingTime);
+      currentVideo.removeEventListener('pause', this.handleVideoEvents);
+      currentVideo.removeEventListener('play', this.handleVideoEvents);
+      currentVideo.removeEventListener('seeked', this.handleVideoEvents);
+      currentVideo.removeEventListener('seeking', this.handleVideoEvents);
     }
     this.socket.disconnect();
   }
@@ -182,17 +186,13 @@ class ChatBox extends React.Component {
 
   showHide() {
     const { isVisible } = { ...this.state };
-    const [sdk] = document.getElementsByClassName('webPlayerSDKContainer');
+    const videoPlayerContainer = document.querySelector('.NFPlayer.nf-player-container');
     if (isVisible) {
-      sdk.childNodes.forEach((elt) => {
-        elt.style.setProperty('width', '100%', 'important');
-      });
+      videoPlayerContainer.style.setProperty('width', '100%', 'important');
       document.getElementById('psychic-giggler').style.width = '0%';
       setTimeout(() => { this.setState({ isVisible: false }); }, 200);
     } else {
-      sdk.childNodes.forEach((elt) => {
-        elt.style.setProperty('width', '80%', 'important');
-      });
+      videoPlayerContainer.style.setProperty('width', '80%', 'important');
       document.getElementById('psychic-giggler').style.width = '20%';
       setTimeout(() => { this.setState({ isVisible: true }); }, 200);
     }

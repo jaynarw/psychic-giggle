@@ -12,14 +12,17 @@
         {
           "matches": ["*://*.primevideo.com/*"],
           "js": ["js/content.js"]
+        },
+        {
+          "matches": ["*://*.netflix.com/*"],
+          "js": ["js/contentNetflix.js"]
         }
     ],
     "browser_action": {
       "default_icon": {                    
         "16": "img/16.png"
       },
-      "default_title": "Psychic Giggle",      
-      "default_popup": "popup.html"
+      "default_title": "Psychic Giggle"      
     },
     "permissions": ["storage"]
   }
