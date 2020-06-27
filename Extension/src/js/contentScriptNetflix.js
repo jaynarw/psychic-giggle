@@ -34,7 +34,6 @@ function check() {
     // document.querySelector('.sizing-wrapper').appendChild(chatBoxContainer);
     // ReactDOM.render(<ChatBox nowPlaying="nowPlaying" />, chatBoxContainer);
     ReactDOM.unmountComponentAtNode(chatBoxContainer);
-    console.log(prefix);
   }
 }
 

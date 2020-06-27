@@ -1,0 +1,12 @@
+#psychic-giggler {
+  font-size: 14px;
+  box-sizing: border-box;
+}
+.card-psychic {
+  box-sizing: border-box;
+}
+.card-psychic label {
+  font-weight: 600!important;
+  display: inline-block;
+  color: rgba(255, 255, 255, 0.88);
+}

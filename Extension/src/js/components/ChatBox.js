@@ -233,6 +233,7 @@ class ChatBox extends React.Component {
                 className="session-form"
                 id="nickname-form"
                 autoComplete="off"
+                onSubmit={(e) => { e.preventDefault(); return false; }}
               >
                 {/* <label htmlFor="username-input" className={errorMsg ? 'nickname-error' : ''}>{`Set your Nickname${errorMsg ? ` - ${errorMsg}` : ''}`}</label> */}
                 <label htmlFor="username-input" className={errorMsg ? 'nickname-error' : ''}>
@@ -240,6 +241,7 @@ class ChatBox extends React.Component {
                   {errorMsg && <span className="error-desc">{` - ${errorMsg}`}</span>}
                 </label>
                 <input
+                  type="text"
                   id="username-input"
                   name="nicknameInput"
                   onChange={(e) => this.handleChange(e)}
