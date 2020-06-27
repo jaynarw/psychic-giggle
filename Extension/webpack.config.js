@@ -8,6 +8,7 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 module.exports = {
   entry: {
     content: './js/contentScript.js',
+    contentNetflix: './js/contentScriptNetflix.js',
     popup: './js/popup.js',
     background: './js/background.js',
   },
