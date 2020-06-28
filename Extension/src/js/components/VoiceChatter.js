@@ -8,25 +8,12 @@ class VoiceChatter extends React.Component {
   constructor(props) {
     super(props);
     console.log('Voice chatter was constructed');
-    // this.state = {
-    //   userList: [],
-    // };
     this.audioSocket = this.props.socket;
-  }
-
-  componentDidMount() {
-    // this.audioSocket.on('update-user-list', (msg) => this.handleUserlistMsg(msg));
     this.audioSocket.on('offer', (msg) => this.handleOfferMsg(msg));
     this.audioSocket.on('candidate', (msg) => this.handleNewICECandidateMsg(msg));
     this.audioSocket.on('answer', (msg) => this.handleAnswerMsg(msg));
     // this.audioSocket.on('hangup', handleHangUpMsg);
   }
-
-  // handleUserlistMsg(msg) {
-  //   const { userList } = { ...this.state };
-  //   userList.push(...msg.users);
-  //   this.setState({ userList });
-  // }
 
   invite(evt) {
     const mediaConstraints = {
@@ -144,14 +131,6 @@ class VoiceChatter extends React.Component {
               />,
             ]
         ))}
-        {/* {remoteAudioList.map((id) => (
-          <audio
-            key={`${id}`}
-            id={`${id}`}
-            controls
-            autoPlay
-          />
-        ))} */}
       </ul>
     );
   }
