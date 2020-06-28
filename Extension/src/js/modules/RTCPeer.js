@@ -32,15 +32,37 @@ class RTCPeer {
     [this.remoteAudio.srcObject] = event.streams;
   }
 
+  log(str) {
+    const time = new Date();
+    console.log(`[${time.toLocaleTimeString()}] ${str}`);
+  }
+
   handleNegotiationNeededEvent() {
-    this.peerConnection.createOffer().then((offer) => this.peerConnection.setLocalDescription(offer))
-      .then(() => {
-        this.audioSocket.emit('offer', {
-          target: this.targetUsername,
-          sdp: this.peerConnection.localDescription,
+    this.log('*** Negotiation needed');
+
+    try {
+      this.log('---> Creating offer');
+      this.peerConnection.createOffer()
+        .then((offer) => {
+          if (this.peerConnection.signalingState !== 'stable') {
+            this.log("     -- The connection isn't stable yet; postponing...");
+            return;
+          }
+
+          this.log('---> Setting local description to the offer');
+          return this.peerConnection.setLocalDescription(offer)
+            .then(() => {
+              this.log(`---> Sending the offer to the remote peer ${this.targetUsername}`);
+              this.audioSocket.emit('offer', {
+                target: this.targetUsername,
+                sdp: this.peerConnection.localDescription,
+              });
+            });
         });
-      })
-      .catch(this.reportError);
+    } catch (err) {
+      this.log('*** The following error occurred while handling the negotiationneeded event:');
+      this.reportError(err);
+    }
   }
 
   handleRemoveTrackEvent(event) {
