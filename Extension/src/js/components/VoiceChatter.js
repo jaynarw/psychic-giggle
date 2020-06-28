@@ -8,25 +8,12 @@ class VoiceChatter extends React.Component {
   constructor(props) {
     super(props);
     console.log('Voice chatter was constructed');
-    // this.state = {
-    //   userList: [],
-    // };
     this.audioSocket = this.props.socket;
-  }
-
-  componentDidMount() {
-    // this.audioSocket.on('update-user-list', (msg) => this.handleUserlistMsg(msg));
     this.audioSocket.on('offer', (msg) => this.handleOfferMsg(msg));
     this.audioSocket.on('candidate', (msg) => this.handleNewICECandidateMsg(msg));
     this.audioSocket.on('answer', (msg) => this.handleAnswerMsg(msg));
     // this.audioSocket.on('hangup', handleHangUpMsg);
   }
-
-  // handleUserlistMsg(msg) {
-  //   const { userList } = { ...this.state };
-  //   userList.push(...msg.users);
-  //   this.setState({ userList });
-  // }
 
   invite(evt) {
     const mediaConstraints = {
@@ -35,6 +22,7 @@ class VoiceChatter extends React.Component {
     };
     const { liveCalls } = this.props;
     const clickedUsername = evt.target.getAttribute('name');
+    console.log(evt.target);
     if (liveCalls[clickedUsername]) {
       console.log("You can't start a call because you already have one open!");
       // return;
@@ -43,7 +31,7 @@ class VoiceChatter extends React.Component {
         console.log("I'm afraid I can't let you talk to yourself. That would be weird.");
         // return;
       }
-
+      console.log(`clicked ${clickedUsername}`);
       const newPeer = new RTCPeer(clickedUsername, this.audioSocket, document.getElementById(`audio-${clickedUsername}`));
       navigator.mediaDevices.getUserMedia(mediaConstraints)
         .then((localStream) => {
@@ -127,9 +115,9 @@ class VoiceChatter extends React.Component {
         {onlineUsers.flatMap((user) => (
           (user.id === socket.id) ? []
             : [
-              <li className="active-user" key={user.id} name={user.id} onClick={(event) => this.invite(event)}>
+              <li className="active-user" key={user.id}>
                 {user.nickname}
-                <span className="enable-voice">Enable voice</span>
+                <span className="enable-voice" name={user.id} onClick={(event) => this.invite(event)}>Enable voice</span>
               </li>]
         ))}
         {onlineUsers.flatMap((user) => (
@@ -144,14 +132,6 @@ class VoiceChatter extends React.Component {
               />,
             ]
         ))}
-        {/* {remoteAudioList.map((id) => (
-          <audio
-            key={`${id}`}
-            id={`${id}`}
-            controls
-            autoPlay
-          />
-        ))} */}
       </ul>
     );
   }
