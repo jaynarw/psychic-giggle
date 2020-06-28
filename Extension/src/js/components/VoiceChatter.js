@@ -36,6 +36,14 @@ class VoiceChatter extends React.Component {
         .then((localStream) => {
           localStream.getTracks().forEach((track) => newPeer.peerConnection.addTrack(track, localStream));
         })
+        .then(() => this.peerConnection.createOffer())
+        .then((offer) => this.peerConnection.setLocalDescription(offer))
+        .then(() => {
+          this.audioSocket.emit('offer', {
+            target: this.targetUsername,
+            sdp: this.peerConnection.localDescription,
+          });
+        })
         .catch(newPeer.handleGetUserMediaError);
       liveCalls[clickedUsername] = newPeer;
       this.props.updateLiveCalls(liveCalls);
