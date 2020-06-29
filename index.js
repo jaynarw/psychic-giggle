@@ -5,11 +5,11 @@ const app = require('express')();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const { v4: uuidv4 } = require('uuid');
-const mongoose = require('mongoose');
+// const mongoose = require('mongoose');
 
 const port = process.env.PORT || 80;
 
-mongoose.connect('mongodb://localhost/test', { useNewUrlParser: true, useUnifiedTopology: true });
+// mongoose.connect('mongodb://localhost/test', { useNewUrlParser: true, useUnifiedTopology: true });
 
 app.get('/', (req, res) => {
   res.sendFile(`${__dirname}/www/index.html`);
@@ -116,7 +116,7 @@ io.on('connection', (socket) => {
   socket.on('client sync', (data) => {
     const socketId = socket.id;
     if (socketSessionMap[socketId] && typeof socketSessionMap[socketId].session === 'string' && liveSessions[socketSessionMap[socketId].session]) {
-      socket.to(socketSessionMap[socketId].session).emit('perform sync', data);
+      socket.to(socketSessionMap[socketId].session).emit('perform sync', { ...data, nickname: socketSessionMap[socketId].nickname });
     }
   });
 
@@ -124,11 +124,12 @@ io.on('connection', (socket) => {
     const socketId = socket.id;
     if (socketSessionMap[socketId] && typeof socketSessionMap[socketId].session === 'string' && liveSessions[socketSessionMap[socketId].session]) {
       // if (liveSessions[socketSessionMap[socketId].session].userList.includes(data.target)) {
-        console.log('Emmitting offer');
-        io.to(data.target).emit('offer', {
-          sdp: data.sdp,
-          name: socket.id,
-        });
+      console.log('Emitting offer');
+      io.to(data.target).emit('offer', {
+        sdp: data.sdp,
+        name: socket.id,
+        nicknameFrom: socketSessionMap[socketId].nickname,
+      });
       // } else {
       //   console.log('Cannot offer');
       // }
@@ -138,7 +139,7 @@ io.on('connection', (socket) => {
   socket.on('answer', (data) => {
     if (socketSessionMap[socket.id] && typeof socketSessionMap[socket.id].session === 'string' && liveSessions[socketSessionMap[socket.id].session]) {
       // if (liveSessions[socketSessionMap[socket.id].session].userList.includes(data.target)) {
-        io.to(data.target).emit('answer', { name: socket.id, sdp: data.sdp });
+      io.to(data.target).emit('answer', { name: socket.id, sdp: data.sdp, nicknameFrom: socketSessionMap[socket.id].nickname });
       // } else {
       //   console.log('Not found socket answer', data.target);
       // }
@@ -148,7 +149,7 @@ io.on('connection', (socket) => {
   socket.on('candidate', (data) => {
     if (socketSessionMap[socket.id] && typeof socketSessionMap[socket.id].session === 'string' && liveSessions[socketSessionMap[socket.id].session]) {
       // if (liveSessions[socketSessionMap[socket.id].session].userList.includes(data.target)) {
-        io.to(data.target).emit('candidate', { name: socket.id, candidate: data.candidate });
+      io.to(data.target).emit('candidate', { name: socket.id, candidate: data.candidate });
       // } else {
       //   console.log('Not found socket cnd', data.target);
       // }
