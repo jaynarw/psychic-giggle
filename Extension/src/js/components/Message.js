@@ -8,7 +8,7 @@ function secondsToHms(d) {
 
   const hDisplay = h > 0 ? `${h}:` : '';
   const mDisplay = m > 0 ? `${`${m}`.padStart(2, '0')}:` : '';
-  const sDisplay = m > 0 ? `${s}`.padStart(2, '0') : s;
+  const sDisplay = m > 0 ? `${s}`.padStart(2, '0') : `${s} secs`;
   return `${hDisplay}${mDisplay}${sDisplay}`;
 }
 
@@ -31,7 +31,7 @@ function Message(props) {
       case 'SEEKING':
         return (
           <div className="user-conn-row">
-            <div className="user-joined-text">{`${data.nickname} seek the video to ${secondsToHms(data.time)}`}</div>
+            <div className="user-joined-text">{`${data.nickname} seeked the video to ${secondsToHms(data.time)}`}</div>
           </div>
         );
       case 'BUFFER':

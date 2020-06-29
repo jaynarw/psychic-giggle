@@ -10,6 +10,11 @@ import LoginIllustration from './LoginIllustration';
 import './chatbox.css';
 import VoiceChatter from './VoiceChatter';
 
+function typingStatusFromUsers(users) {
+  if (users.length === 0) return '';
+  return `${users.join(', ')} ${users.length > 1 ? 'are' : 'is'} typing...`;
+}
+
 class ChatBox extends React.Component {
   constructor(props) {
     super(props);
@@ -28,6 +33,7 @@ class ChatBox extends React.Component {
       isVisible: true,
       liveCalls: {},
       onlineUsers: [],
+      typingUsers: [],
     };
     this.socket = io('https://radiant-sierra-52862.herokuapp.com');
     this.play = true;
@@ -104,6 +110,16 @@ class ChatBox extends React.Component {
         }
       }
       if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager(this.eventQueue[0]);
+    });
+
+    this.socket.on('typing', (nickname) => {
+      const { typingUsers } = { ...this.state };
+      typingUsers.push(nickname);
+      this.setState({ typingUsers });
+      setTimeout(() => {
+        const { typingUsers } = { ...this.state };
+        this.setState({ typingUsers: typingUsers.filter((user) => user !== nickname) });
+      }, 3000);
     });
 
     this.socket.on('perform sync', (data) => {
@@ -290,7 +306,16 @@ class ChatBox extends React.Component {
 
   render() {
     const {
-      currentSession, receivedMsgs, nicknameInput, errorMsg, errorMsgJoin, joinSessionInput, isVisible, liveCalls, onlineUsers,
+      currentSession,
+      receivedMsgs,
+      nicknameInput,
+      errorMsg,
+      errorMsgJoin,
+      joinSessionInput,
+      isVisible,
+      liveCalls,
+      onlineUsers,
+      typingUsers,
     } = { ...this.state };
     return (
       <>
@@ -371,6 +396,9 @@ class ChatBox extends React.Component {
             </div>
             <div id="chat-message-list">
               {receivedMsgs.map((messageData) => <Message username={nicknameInput} messageData={messageData} userId={this.socket.id} />)}
+            </div>
+            <div>
+              {typingStatusFromUsers(typingUsers)}
             </div>
             <SendMessageForm socket={this.socket} />
           </>

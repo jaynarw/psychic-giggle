@@ -15,9 +15,13 @@ class SendMessageForm extends React.Component {
   }
 
   handleChange(event) {
+    const { socket } = this.props;
     const { target } = event;
     const { value, name } = target;
     this.setState({ [name]: value });
+    if (name === 'message') {
+      socket.emit('typing');
+    }
   }
 
   sendMessage(event) {
