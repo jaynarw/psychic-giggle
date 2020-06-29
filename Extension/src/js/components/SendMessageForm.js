@@ -2,7 +2,9 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable react/prop-types */
 import React from 'react';
-import { Picker } from 'emoji-mart';
+import ReactTextareaAutocomplete from '@webscopeio/react-textarea-autocomplete';
+import { Picker, emojiIndex } from 'emoji-mart';
+import '@webscopeio/react-textarea-autocomplete/style.css';
 import 'emoji-mart/css/emoji-mart.css';
 
 class SendMessageForm extends React.Component {
@@ -12,6 +14,7 @@ class SendMessageForm extends React.Component {
       message: '',
       showEmojiPicker: false,
     };
+    this.handleKeyPress = this.handleKeyPress.bind(this);
   }
 
   handleChange(event) {
@@ -24,11 +27,18 @@ class SendMessageForm extends React.Component {
     }
   }
 
+  handleKeyPress(event) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      this.sendMessage();
+    }
+  }
+
   sendMessage(event) {
     const { message } = { ...this.state };
     const { socket } = this.props;
-    event.preventDefault();
-    if (message && message.length > 0) socket.emit('msg', message);
+    // event.preventDefault();
+    if (message && message.trim().length > 0) socket.emit('msg', message);
     this.setState({ message: '' });
   }
 
@@ -60,14 +70,43 @@ class SendMessageForm extends React.Component {
           />
         </div>
         )}
-        <form className="send-message" onSubmit={(e) => this.sendMessage(e)} autoComplete="off">
+        <form
+          className="send-message"
+          // onSubmit={(e) => this.sendMessage(e)}
+          autoComplete="off"
+        >
           <span id="emoji-picker" onClick={() => this.togglePicker()}>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
               <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0m0 22C6.486 22 2 17.514 2 12S6.486 2 12 2s10 4.486 10 10-4.486 10-10 10" />
               <path d="M8 7a2 2 0 1 0-.001 3.999A2 2 0 0 0 8 7M16 7a2 2 0 1 0-.001 3.999A2 2 0 0 0 16 7M15.232 15c-.693 1.195-1.87 2-3.349 2-1.477 0-2.655-.805-3.347-2H15m3-2H6a6 6 0 1 0 12 0" />
             </svg>
           </span>
-          <input placeholder="Type a chat message" id="msg" type="text" name="message" onChange={(e) => this.handleChange(e)} value={message} />
+          {/* <input placeholder="Type a chat message" id="msg" type="text" name="message" onChange={(e) => this.handleChange(e)} value={message} /> */}
+          <ReactTextareaAutocomplete
+            // className="message-input my-textarea"
+            name="message"
+            id="msg"
+            rows="1"
+            value={message}
+            loadingComponent={() => <span>Loading</span>}
+            onKeyPress={this.handleKeyPress}
+            onChange={(e) => this.handleChange(e)}
+            boundariesElement={document.getElementById('psychick')}
+            placeholder="Type a chat message"
+            trigger={{
+              ':': {
+                dataProvider: (token) => emojiIndex.search(token).slice(0, 5).map((o) => ({
+                  colons: o.colons,
+                  native: o.native,
+                })),
+                component: ({ entity: { native, colons } }) => (
+                  <div>{`${colons} ${native}`}</div>
+                ),
+                output: (item) => `${item.native}`,
+              },
+            }}
+          />
+
         </form>
       </div>
     );

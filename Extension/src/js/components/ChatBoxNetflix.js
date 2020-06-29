@@ -11,6 +11,11 @@ import './chatbox.css';
 import './chatboxNetflix.css';
 import VoiceChatter from './VoiceChatter';
 
+function typingStatusFromUsers(users) {
+  if (users.length === 0) return '';
+  return `${users.join(', ')} ${users.length > 1 ? 'are' : 'is'} typing...`;
+}
+
 class ChatBox extends React.Component {
   constructor(props) {
     super(props);
@@ -28,12 +33,21 @@ class ChatBox extends React.Component {
       isVisible: true,
       liveCalls: {},
       onlineUsers: [],
+      typingUsers: [],
     };
     this.socket = io('https://radiant-sierra-52862.herokuapp.com');
     this.play = true;
     this.pause = true;
     this.seeking = false;
     this.visible = true;
+    this.userSeeked = true;
+    this.eventQueue = [];
+    this.bufferCounter = 0;
+    this.queueManagerRunning = false;
+    this.wasPlayingBeforeBuffer = null;
+    this.typingTimeout = {};
+    this.bufferObserver = null;
+
     this.handleVideoEvents = this.handleVideoEvents.bind(this);
     this.netflixAPI = window.netflix.appContext.state.playerApp.getAPI();
     this.sessionId = this.netflixAPI.videoPlayer.getAllPlayerSessionIds();

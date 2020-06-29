@@ -2,6 +2,7 @@
   background-color: #121212;
   display: grid;
   grid-template-rows: repeat(18, 1fr) 20px 1fr;
+  font-weight: normal;
   width: 100%;
   height: 100%;
 }
@@ -54,17 +55,20 @@
   background-color: #000;
   border: solid 1px #7289da;
 }
-.send-message input#msg {
+.send-message #msg {
   transition: background-color .2s ease-in-out!important;
+  font-size: 14px;
   color: rgba(255, 255, 255, 0.87);
   grid-area: message-input;
   border: none;
   outline: none;
+  box-shadow: none;
+  resize: none;
   /* background-color: #373737!important; */
   background-color: #1d1d1f;
   padding: 4px 4px 3px 4px!important;
 }
-.send-message input#msg:focus {
+.send-message #msg:focus {
   background-color: #000;
 }
 #emoji-picker {
@@ -307,4 +311,58 @@
 }
 .typing-status span {
   cursor: text;
+}
+.rta {
+  position: relative;
+  border-left: 1px solid #ccc;
+  display: flex;
+  flex-direction: column;
+}
+
+.rta__autocomplete {
+  position: absolute;
+  width: auto;
+  background-color: #202124;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  border: 1px solid rgba(255,255,255,0.3);
+}
+
+.rta__autocomplete ul {
+  list-style: none;
+  text-align: left;
+  margin-bottom: 0;
+  color: rgba(255,255,255,0.60);
+  font-weight: normal;
+}
+
+.rta__autocomplete li {
+  padding: 3px;
+  cursor: pointer;
+  list-style: none;
+  margin-bottom: 0;
+}
+
+.rta__autocomplete li:hover {
+  background-color: rgba(0,0,0,1);
+  border: solid 1px #7898da;
+  border-radius: 3px;
+  transition: background 0.1s ease-in-out 0s !important;
+}
+.rta__autocomplete li:hover .rta__entity {
+  background-color: black;
+}
+.rta__entity {
+  background-color: #202124;
+}
+.rta__item:not(:last-child) {
+  border-bottom: 1px solid #ffffff1f;
+}
+.rta__list {
+  background-color: #202124;
+  border: 0;
+}
+.rta {
+  border: none;
+  font-size: 14px;
 }
