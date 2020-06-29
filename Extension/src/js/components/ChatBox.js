@@ -33,6 +33,7 @@ class ChatBox extends React.Component {
     this.play = true;
     this.pause = true;
     this.seeking = false;
+    this.userSeeked = true;
     this.eventQueue = [];
     this.bufferCounter = 0;
     this.visible = true;
@@ -106,21 +107,29 @@ class ChatBox extends React.Component {
     });
 
     this.socket.on('perform sync', (data) => {
-      const { currentVideo } = { ...this.state };
+      const { currentVideo, receivedMsgs } = { ...this.state };
       switch (data.type) {
         case 'PAUSE':
+          receivedMsgs.unshift({ status: 'PAUSE', nickname: data.nickname });
+          this.setState({ receivedMsgs });
           this.eventQueue.push({ pause: true });
           // currentVideo.pause();
           break;
         case 'PLAY':
+          receivedMsgs.unshift({ status: 'PLAY', nickname: data.nickname });
+          this.setState({ receivedMsgs });
           this.eventQueue.push({ play: true });
           // currentVideo.play();
           break;
         case 'SEEKING':
+          receivedMsgs.unshift({ status: 'SEEKING', nickname: data.nickname, time: data.value });
+          this.setState({ receivedMsgs });
           this.eventQueue.push({ timeUpdate: true, time: data.value, paused: data.paused });
           // currentVideo.currentTime = data.value;
           break;
         case 'BUFFER STARTED':
+          receivedMsgs.unshift({ status: 'BUFFER', nickname: data.nickname });
+          this.setState({ receivedMsgs });
           if (this.bufferCounter === 0) {
             this.wasPlayingBeforeBuffer = !currentVideo.paused;
             if (this.wasPlayingBeforeBuffer) this.eventQueue.push({ pause: true });
@@ -130,7 +139,7 @@ class ChatBox extends React.Component {
         case 'BUFFER ENDED':
           this.bufferCounter -= 1;
           if (this.bufferCounter === 0 && this.wasPlayingBeforeBuffer) {
-            this.eventQueue.push({ play: true, buffer: true});
+            this.eventQueue.push({ play: true, buffer: true });
           }
           break;
         default:
@@ -155,6 +164,7 @@ class ChatBox extends React.Component {
   }
 
   seekVideo(target, time, paused) {
+    this.userSeeked = false;
     const seek = (tr, ti, state) => new Promise((resolve) => {
       const fn = () => {
         tr.removeEventListener('seeked', fn);
@@ -208,7 +218,10 @@ class ChatBox extends React.Component {
       case 'seeking':
         if (this.seeking !== true) {
           this.seeking = true;
-          this.socket.emit('client sync', { type: 'SEEKING', value: currentVideo.currentTime, paused: currentVideo.paused });
+          if (this.userSeeked) {
+            this.socket.emit('client sync', { type: 'SEEKING', value: currentVideo.currentTime, paused: currentVideo.paused });
+          }
+          this.userSeeked = true;
         } else this.seeking = true;
         break;
       default:

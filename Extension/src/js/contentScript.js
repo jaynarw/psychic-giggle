@@ -19,7 +19,8 @@ function check() {
       [sdk] = document.getElementsByClassName('webPlayerSDKContainer');
       if (sdk && !sdk.contains(chatBoxContainer)) {
         const nowPlayingElt = sdk.querySelector('.fgzdi7m.f10ip5t1.fs89ngr');
-        if (nowPlayingElt) nowPlaying = nowPlayingElt.textContent;
+        const nowPlayingSecondaryElt = sdk.querySelector('div.f15586js.f1iodedr.fdm7v.fs89ngr');
+        if (nowPlayingElt && nowPlayingSecondaryElt) nowPlaying = (nowPlayingElt.textContent + nowPlayingSecondaryElt.textContent);
         [video] = sdk.getElementsByTagName('video');
         if (video && nowPlaying.length > 0) {
           sdk.childNodes.forEach((elt) => {
