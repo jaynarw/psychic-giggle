@@ -45,6 +45,7 @@ class ChatBox extends React.Component {
     this.visible = true;
     this.queueManagerRunning = false;
     this.wasPlayingBeforeBuffer = null;
+    this.typingTimeout = {};
   }
 
   componentDidMount() {
@@ -114,12 +115,27 @@ class ChatBox extends React.Component {
 
     this.socket.on('typing', (nickname) => {
       const { typingUsers } = { ...this.state };
-      typingUsers.push(nickname);
-      this.setState({ typingUsers });
-      setTimeout(() => {
-        const { typingUsers } = { ...this.state };
-        this.setState({ typingUsers: typingUsers.filter((user) => user !== nickname) });
-      }, 3000);
+
+      if (!typingUsers.includes(nickname)) {
+        typingUsers.push(nickname);
+        this.setState({ typingUsers });
+
+        const id = setTimeout(() => {
+          const { typingUsers } = { ...this.state };
+          this.setState({ typingUsers: typingUsers.filter((user) => user !== nickname) });
+        }, 3000);
+        this.typingTimeout[nickname] = id;
+      } else {
+        if (this.typingTimeout[nickname]) {
+          clearTimeout(this.typingTimeout[nickname]);
+        }
+
+        const id = setTimeout(() => {
+          const { typingUsers } = { ...this.state };
+          this.setState({ typingUsers: typingUsers.filter((user) => user !== nickname) });
+        }, 3000);
+        this.typingTimeout[nickname] = id;
+      }
     });
 
     this.socket.on('perform sync', (data) => {
