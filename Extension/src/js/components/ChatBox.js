@@ -46,6 +46,9 @@ class ChatBox extends React.Component {
     this.queueManagerRunning = false;
     this.wasPlayingBeforeBuffer = null;
     this.typingTimeout = {};
+    this.bufferObserver = null;
+
+    this.handleVideoEvents = this.handleVideoEvents.bind(this);
   }
 
   componentDidMount() {
@@ -55,11 +58,11 @@ class ChatBox extends React.Component {
       const [video] = sdk.getElementsByTagName('video');
       if (video) {
         this.setState({ currentVideo: video });
-        // video.addEventListener('timeupdate', this.updatePlayingTime);
-        video.addEventListener('pause', (e) => this.handleVideoEvents(e));
-        video.addEventListener('play', (e) => this.handleVideoEvents(e));
-        video.addEventListener('seeked', (e) => this.handleVideoEvents(e));
-        video.addEventListener('seeking', (e) => this.handleVideoEvents(e));
+
+        video.addEventListener('pause', this.handleVideoEvents);
+        video.addEventListener('play', this.handleVideoEvents);
+        video.addEventListener('seeked', this.handleVideoEvents);
+        video.addEventListener('seeking', this.handleVideoEvents);
       }
     }
     this.socket.on('update users list', (onlineUsers) => {
@@ -84,14 +87,14 @@ class ChatBox extends React.Component {
       const { currentVideo } = { ...this.state };
       if (currentVideo) this.socket.emit('rec time', { time: currentVideo.currentTime, paused: currentVideo.paused });
     });
-    const bufferObserver = new MutationObserver(((mutations) => {
+    this.bufferObserver = new MutationObserver(((mutations) => {
       // const { currentVideo } = { ...this.state };
       mutations.forEach((mutationRecord) => {
         if (mutationRecord.target.style.display === 'none') this.socket.emit('client sync', { type: 'BUFFER ENDED' });
         else this.socket.emit('client sync', { type: 'BUFFER STARTED' });
       });
     }));
-    bufferObserver.observe(buffer, { attributes: true, attributeFilter: ['style'] });
+    this.bufferObserver.observe(buffer, { attributes: true, attributeFilter: ['style'] });
 
     this.socket.on('set time', (state) => {
       const { currentVideo } = { ...this.state };
@@ -184,7 +187,14 @@ class ChatBox extends React.Component {
   componentWillUnmount() {
     const { currentVideo } = { ...this.state };
     if (currentVideo) {
-      // currentVideo.removeEventListener('timeupdate', this.updatePlayingTime);
+      currentVideo.removeEventListener('pause', this.handleVideoEvents);
+      currentVideo.removeEventListener('play', this.handleVideoEvents);
+      currentVideo.removeEventListener('seeked', this.handleVideoEvents);
+      currentVideo.removeEventListener('seeking', this.handleVideoEvents);
+    }
+    if (this.bufferObserver) {
+      this.bufferObserver.disconnect();
+      this.bufferObserver = null;
     }
     this.socket.disconnect();
   }
@@ -367,7 +377,6 @@ class ChatBox extends React.Component {
                   {errorMsg && <span className="error-desc">{` - ${errorMsg}`}</span>}
                 </label>
                 <input
-                  type="text"
                   id="username-input"
                   name="nicknameInput"
                   onChange={(e) => this.handleChange(e)}
@@ -413,8 +422,8 @@ class ChatBox extends React.Component {
             <div id="chat-message-list">
               {receivedMsgs.map((messageData) => <Message username={nicknameInput} messageData={messageData} userId={this.socket.id} />)}
             </div>
-            <div>
-              {typingStatusFromUsers(typingUsers)}
+            <div className="typing-status">
+              <span>{typingStatusFromUsers(typingUsers)}</span>
             </div>
             <SendMessageForm socket={this.socket} />
           </>
