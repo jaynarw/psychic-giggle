@@ -120,6 +120,13 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('typing', () => {
+    const socketId = socket.id;
+    if (socketSessionMap[socketId] && typeof socketSessionMap[socketId].session === 'string' && liveSessions[socketSessionMap[socketId].session]) {
+      socket.to(socketSessionMap[socketId].session).emit('typing', socketSessionMap[socketId].nickname);
+    }
+  });
+
   socket.on('offer', (data) => {
     const socketId = socket.id;
     if (socketSessionMap[socketId] && typeof socketSessionMap[socketId].session === 'string' && liveSessions[socketSessionMap[socketId].session]) {
