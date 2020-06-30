@@ -135,10 +135,10 @@ class RTCPeer {
   }
 
   hangUpCall() {
-    this.closeCall();
     this.audioSocket.emit('hangup', {
       target: this.targetUsername,
     });
+    this.closeCall();
   }
 
   handleGetUserMediaError(e) {

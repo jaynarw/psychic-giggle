@@ -12,7 +12,7 @@ class VoiceChatter extends React.Component {
     this.audioSocket.on('offer', (msg) => this.handleOfferMsg(msg));
     this.audioSocket.on('candidate', (msg) => this.handleNewICECandidateMsg(msg));
     this.audioSocket.on('answer', (msg) => this.handleAnswerMsg(msg));
-    this.audioSocket.on('hangup', (msg) => this.handleHangUpMsg);
+    this.audioSocket.on('hangup', (msg) => this.handleHangUpMsg(msg));
   }
 
   invite(evt) {
@@ -22,7 +22,6 @@ class VoiceChatter extends React.Component {
     };
     const { liveCalls } = this.props;
     const clickedUsername = evt.target.getAttribute('name');
-    console.log(evt.target);
     if (liveCalls[clickedUsername]) {
       console.log("You can't start a call because you already have one open!");
       if (liveCalls[clickedUsername].status === 'Disconnect') {
@@ -36,7 +35,6 @@ class VoiceChatter extends React.Component {
         console.log("I'm afraid I can't let you talk to yourself. That would be weird.");
         // return;
       }
-      console.log(`clicked ${clickedUsername}`);
       const newPeer = new RTCPeer(clickedUsername, this.audioSocket, document.getElementById(`audio-${clickedUsername}`));
       navigator.mediaDevices.getUserMedia(mediaConstraints)
         .then((localStream) => {
@@ -144,7 +142,6 @@ class VoiceChatter extends React.Component {
 
   render() {
     const { onlineUsers, socket, liveCalls } = this.props;
-    console.log(onlineUsers);
     return (
       <ul className="userlistbox">
         {onlineUsers.flatMap((user) => (
