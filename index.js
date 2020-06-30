@@ -78,7 +78,7 @@ io.on('connection', (socket) => {
       if (socketSessionMap[socketId]) {
         fn(socketSessionMap[socketId].session);
       } else {
-        const newSession = uuidv4();
+        const newSession = uuidv4().slice(0, 6);
         liveSessions[newSession] = { users: 1, currentTitle, userList: [{ id: socketId, nickname }] };
         socket.join(newSession);
         socketSessionMap[socketId] = { session: newSession, nickname };
