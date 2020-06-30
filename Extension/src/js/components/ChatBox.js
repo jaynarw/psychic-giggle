@@ -65,6 +65,15 @@ class ChatBox extends React.Component {
         video.addEventListener('seeking', this.handleVideoEvents);
       }
     }
+
+    this.bufferObserver = new MutationObserver(((mutations) => {
+      mutations.forEach((mutationRecord) => {
+        if (mutationRecord.target.style.display === 'none') this.socket.emit('client sync', { type: 'BUFFER ENDED' });
+        else this.socket.emit('client sync', { type: 'BUFFER STARTED' });
+      });
+    }));
+    this.bufferObserver.observe(buffer, { attributes: true, attributeFilter: ['style'] });
+
     this.socket.on('update users list', (onlineUsers) => {
       this.setState({ onlineUsers });
     });
@@ -87,15 +96,6 @@ class ChatBox extends React.Component {
       const { currentVideo } = { ...this.state };
       if (currentVideo) this.socket.emit('rec time', { time: currentVideo.currentTime, paused: currentVideo.paused });
     });
-    this.bufferObserver = new MutationObserver(((mutations) => {
-      // const { currentVideo } = { ...this.state };
-      mutations.forEach((mutationRecord) => {
-        if (mutationRecord.target.style.display === 'none') this.socket.emit('client sync', { type: 'BUFFER ENDED' });
-        else this.socket.emit('client sync', { type: 'BUFFER STARTED' });
-      });
-    }));
-    this.bufferObserver.observe(buffer, { attributes: true, attributeFilter: ['style'] });
-
     this.socket.on('set time', (state) => {
       const { currentVideo } = { ...this.state };
       if (currentVideo) {
@@ -270,10 +270,6 @@ class ChatBox extends React.Component {
         // do nothing
     }
   }
-
-  // updatePlayingTime(event) {
-  //   this.setState({ playingTime: event.target.currentTime });
-  // }
 
   displayError(errorMsg) {
     this.setState({ errorMsg });

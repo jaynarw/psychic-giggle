@@ -25,7 +25,7 @@ function check() {
   if (prefix === 'watch') {
     const videoPlayerContainer = document.querySelector('.NFPlayer.nf-player-container');
     const sizingWrapper = document.querySelector('.sizing-wrapper');
-    if (videoPlayerContainer && !sizingWrapper.contains(chatBoxContainer)) {
+    if (videoPlayerContainer && document.getElementsByTagName('video').length === 1 && !sizingWrapper.contains(chatBoxContainer)) {
       videoPlayerContainer.style.setProperty('width', '80%', 'important');
       sizingWrapper.appendChild(chatBoxContainer);
       ReactDOM.render(<ChatBox nowPlaying="nowPlaying" />, chatBoxContainer);

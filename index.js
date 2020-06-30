@@ -153,6 +153,16 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('hangup', (data) => {
+    if (socketSessionMap[socket.id] && typeof socketSessionMap[socket.id].session === 'string' && liveSessions[socketSessionMap[socket.id].session]) {
+      // if (liveSessions[socketSessionMap[socket.id].session].userList.includes(data.target)) {
+      io.to(data.target).emit('hangup', { name: socket.id, nicknameFrom: socketSessionMap[socket.id].nickname });
+      // } else {
+      //   console.log('Not found socket answer', data.target);
+      // }
+    }
+  });
+
   socket.on('candidate', (data) => {
     if (socketSessionMap[socket.id] && typeof socketSessionMap[socket.id].session === 'string' && liveSessions[socketSessionMap[socket.id].session]) {
       // if (liveSessions[socketSessionMap[socket.id].session].userList.includes(data.target)) {

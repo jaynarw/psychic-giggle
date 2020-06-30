@@ -12,7 +12,7 @@ class VoiceChatter extends React.Component {
     this.audioSocket.on('offer', (msg) => this.handleOfferMsg(msg));
     this.audioSocket.on('candidate', (msg) => this.handleNewICECandidateMsg(msg));
     this.audioSocket.on('answer', (msg) => this.handleAnswerMsg(msg));
-    // this.audioSocket.on('hangup', handleHangUpMsg);
+    this.audioSocket.on('hangup', (msg) => this.handleHangUpMsg);
   }
 
   invite(evt) {
@@ -25,6 +25,11 @@ class VoiceChatter extends React.Component {
     console.log(evt.target);
     if (liveCalls[clickedUsername]) {
       console.log("You can't start a call because you already have one open!");
+      if (liveCalls[clickedUsername].status === 'Disconnect') {
+        liveCalls[clickedUsername].conn.hangUpCall();
+        delete liveCalls[clickedUsername];
+        this.props.updateLiveCalls(liveCalls);
+      }
       // return;
     } else {
       if (clickedUsername === this.audioSocket.id) {
@@ -38,7 +43,7 @@ class VoiceChatter extends React.Component {
           localStream.getTracks().forEach((track) => newPeer.peerConnection.addTrack(track, localStream));
         })
         .catch(newPeer.handleGetUserMediaError);
-      liveCalls[clickedUsername] = newPeer;
+      liveCalls[clickedUsername] = { conn: newPeer, status: 'Calling' };
       this.props.updateLiveCalls(liveCalls);
     }
   }
@@ -72,11 +77,12 @@ class VoiceChatter extends React.Component {
       })
       .catch(newPeer.handleGetUserMediaError);
 
-    liveCalls[targetUsername] = newPeer;
+    liveCalls[targetUsername] = { conn: newPeer, status: 'Offered a call' };
     this.props.updateLiveCalls(liveCalls);
   }
 
   handleAnswerMsg(msg) {
+    const { liveCalls } = this.props;
     function log(text) {
       const time = new Date();
       console.log(`[${time.toLocaleTimeString()}] ${text}`);
@@ -87,28 +93,57 @@ class VoiceChatter extends React.Component {
       console.trace(`[${time.toLocaleTimeString()}] ${text}`);
     }
 
-    // Configure the remote description, which is the SDP payload
-    // in our "video-answer" message.
-
-    const answeredCall = this.props.liveCalls[msg.name];
+    const answeredCall = liveCalls[msg.name].conn;
     const desc = new RTCSessionDescription(msg.sdp);
     answeredCall.peerConnection.setRemoteDescription(desc).catch((errMessage) => {
       logError(`Error ${errMessage.name}: ${errMessage.message}`);
     });
+    liveCalls[msg.name].status = 'Voice Connected';
+    this.props.updateLiveCalls(liveCalls);
+  }
+
+  handleHangUpMsg(msg) {
+    const { liveCalls } = this.props;
+    if (liveCalls[msg.name]) {
+      liveCalls[msg.name].conn.closeCall();
+      delete liveCalls[msg.name];
+      this.props.updateLiveCalls(liveCalls);
+    }
   }
 
   handleNewICECandidateMsg(msg) {
+    const { liveCalls } = this.props;
     function log(text) {
       const time = new Date();
       console.log(`[${time.toLocaleTimeString()}] ${text}`);
     }
     log(`*** Candidates exchanged from ${msg.name}`);
-    const call = this.props.liveCalls[msg.name];
+    const call = liveCalls[msg.name].conn;
     call.handleNewICECandidateMsg(msg.candidate);
+    if (liveCalls[msg.name].status === 'Offered a call') liveCalls[msg.name].status = 'Voice Connected';
+    this.props.updateLiveCalls(liveCalls);
+  }
+
+  hoverCall(event) {
+    const { liveCalls } = this.props;
+    const hovered = event.target.getAttribute('name');
+    if (liveCalls[hovered] && liveCalls[hovered].status === 'Voice Connected') {
+      liveCalls[hovered].status = 'Disconnect';
+      this.props.updateLiveCalls(liveCalls);
+    }
+  }
+
+  exitHoverCall(event) {
+    const { liveCalls } = this.props;
+    const hovered = event.target.getAttribute('name');
+    if (liveCalls[hovered] && liveCalls[hovered].status === 'Disconnect') {
+      liveCalls[hovered].status = 'Voice Connected';
+      this.props.updateLiveCalls(liveCalls);
+    }
   }
 
   render() {
-    const { onlineUsers, socket } = this.props;
+    const { onlineUsers, socket, liveCalls } = this.props;
     console.log(onlineUsers);
     return (
       <ul className="userlistbox">
@@ -117,7 +152,15 @@ class VoiceChatter extends React.Component {
             : [
               <li className="active-user" key={user.id}>
                 {user.nickname}
-                <span className="enable-voice" name={user.id} onClick={(event) => this.invite(event)}>Enable voice</span>
+                <span
+                  className="enable-voice"
+                  name={user.id}
+                  onClick={(event) => this.invite(event)}
+                  onMouseOver={(event) => this.hoverCall(event)}
+                  onMouseOut={(event) => this.exitHoverCall(event)}
+                >
+                  {liveCalls[user.id] ? liveCalls[user.id].status : 'Connect with Voice'}
+                </span>
               </li>]
         ))}
         {onlineUsers.flatMap((user) => (
