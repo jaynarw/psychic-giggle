@@ -2,12 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ChatBox from './components/ChatBoxNetflix';
 
-// let playerSet;
-// let sdk;
-// let video;
-// let videoExists;
-// let nowPlaying = '';
-
 const chatBoxContainer = document.createElement('div');
 chatBoxContainer.id = 'psychic-giggler';
 chatBoxContainer.style.zIndex = '9';
@@ -24,15 +18,16 @@ function check() {
   const prefix = url.pathname.split('/')[1];
   if (prefix === 'watch') {
     const videoPlayerContainer = document.querySelector('.NFPlayer.nf-player-container');
+    const nowPlayingElt = videoPlayerContainer.querySelector('.video-title').textContent;
+    console.log(nowPlayingElt);
     const sizingWrapper = document.querySelector('.sizing-wrapper');
-    if (videoPlayerContainer && !sizingWrapper.contains(chatBoxContainer)) {
+    if (videoPlayerContainer && nowPlayingElt.length > 0 && document.getElementsByTagName('video').length === 1 && !sizingWrapper.contains(chatBoxContainer)) {
       videoPlayerContainer.style.setProperty('width', '80%', 'important');
       sizingWrapper.appendChild(chatBoxContainer);
-      ReactDOM.render(<ChatBox nowPlaying="nowPlaying" />, chatBoxContainer);
+      console.log(nowPlayingElt);
+      ReactDOM.render(<ChatBox nowPlaying={nowPlayingElt} />, chatBoxContainer);
     }
   } else {
-    // document.querySelector('.sizing-wrapper').appendChild(chatBoxContainer);
-    // ReactDOM.render(<ChatBox nowPlaying="nowPlaying" />, chatBoxContainer);
     ReactDOM.unmountComponentAtNode(chatBoxContainer);
   }
 }
@@ -41,39 +36,3 @@ function check() {
 const config = { attribute: false, childList: true, subtree: true };
 const obs = new MutationObserver(check);
 obs.observe(document.body, config);
-
-// window.addEventListener('popstate', (e) => {
-//   console.log(e.state);
-// });
-
-// function check() {
-//   playerSet = document.getElementById('dv-web-player');
-//   if (playerSet) {
-//     videoExists = window.getComputedStyle(playerSet).display !== 'none';
-//     if (videoExists) {
-//       [sdk] = document.getElementsByClassName('webPlayerSDKContainer');
-//       if (sdk && !sdk.contains(chatBoxContainer)) {
-//         const nowPlayingElt = sdk.querySelector('.fgzdi7m.f10ip5t1.fs89ngr');
-//         if (nowPlayingElt) nowPlaying = nowPlayingElt.textContent;
-//         [video] = sdk.getElementsByTagName('video');
-//         if (video && nowPlaying.length > 0) {
-//           sdk.childNodes.forEach((elt) => {
-//             elt.style.setProperty('width', '80%', 'important');
-//           });
-//           sdk.appendChild(chatBoxContainer);
-//           ReactDOM.render(<ChatBox nowPlaying={nowPlaying} />, chatBoxContainer);
-//         }
-//       }
-//     } else if (sdk && sdk.contains(chatBoxContainer)) {
-//       ReactDOM.unmountComponentAtNode(chatBoxContainer);
-//       sdk.removeChild(chatBoxContainer);
-//       sdk.childNodes.forEach((elt) => {
-//         elt.style.setProperty('width', '100%', 'important');
-//       });
-//     }
-//   }
-// }
-
-// const config = { attribute: true, childList: true, subtree: true };
-// const obs = new MutationObserver(check);
-// obs.observe(document.body, config);

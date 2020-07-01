@@ -35,7 +35,7 @@ class ChatBox extends React.Component {
       onlineUsers: [],
       typingUsers: [],
     };
-    this.socket = io('https://radiant-sierra-52862.herokuapp.com');
+    this.socket = io('https://binge-box.herokuapp.com');
     this.play = true;
     this.pause = true;
     this.seeking = false;
@@ -65,6 +65,15 @@ class ChatBox extends React.Component {
         video.addEventListener('seeking', this.handleVideoEvents);
       }
     }
+
+    this.bufferObserver = new MutationObserver(((mutations) => {
+      mutations.forEach((mutationRecord) => {
+        if (mutationRecord.target.style.display === 'none') this.socket.emit('client sync', { type: 'BUFFER ENDED' });
+        else this.socket.emit('client sync', { type: 'BUFFER STARTED' });
+      });
+    }));
+    this.bufferObserver.observe(buffer, { attributes: true, attributeFilter: ['style'] });
+
     this.socket.on('update users list', (onlineUsers) => {
       this.setState({ onlineUsers });
     });
@@ -87,15 +96,6 @@ class ChatBox extends React.Component {
       const { currentVideo } = { ...this.state };
       if (currentVideo) this.socket.emit('rec time', { time: currentVideo.currentTime, paused: currentVideo.paused });
     });
-    this.bufferObserver = new MutationObserver(((mutations) => {
-      // const { currentVideo } = { ...this.state };
-      mutations.forEach((mutationRecord) => {
-        if (mutationRecord.target.style.display === 'none') this.socket.emit('client sync', { type: 'BUFFER ENDED' });
-        else this.socket.emit('client sync', { type: 'BUFFER STARTED' });
-      });
-    }));
-    this.bufferObserver.observe(buffer, { attributes: true, attributeFilter: ['style'] });
-
     this.socket.on('set time', (state) => {
       const { currentVideo } = { ...this.state };
       if (currentVideo) {
@@ -271,10 +271,6 @@ class ChatBox extends React.Component {
     }
   }
 
-  // updatePlayingTime(event) {
-  //   this.setState({ playingTime: event.target.currentTime });
-  // }
-
   displayError(errorMsg) {
     this.setState({ errorMsg });
   }
@@ -411,7 +407,9 @@ class ChatBox extends React.Component {
                 <div id="collapse-chat" className="collapse-btn" onClick={() => this.showHide()}><MdLastPage style={{ width: '100%', height: '100%' }} /></div>
                 <CopyToClipboard text={currentSession}>
                   <div className="username-input" id="copy-session">
-                    Share your session ID
+                    Share your session ID -
+                    {' '}
+                    {currentSession}
                   </div>
                 </CopyToClipboard>
               </div>

@@ -2,6 +2,7 @@ import React from 'react';
 
 function secondsToHms(d) {
   d = Number(d);
+  d /= 1000;
   const h = Math.floor(d / 3600);
   const m = Math.floor(d % 3600 / 60);
   const s = Math.floor(d % 3600 % 60);
@@ -60,8 +61,8 @@ function Message(props) {
       {messageData.status && (
         getStatusMessage(messageData)
       )}
-      {!messageData.joined 
-      && !messageData.left 
+      {!messageData.joined
+      && !messageData.left
       && !messageData.status
       && (
       <div className={`message-row ${messageData.from === userId ? 'you-message' : 'other-message'}`}>

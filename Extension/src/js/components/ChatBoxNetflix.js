@@ -4,7 +4,7 @@ import * as io from 'socket.io-client';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import ReactTooltip from 'react-tooltip';
 import { MdLastPage, MdFirstPage } from 'react-icons/md';
-import Message from './Message';
+import Message from './MessageNetflix';
 import SendMessageForm from './SendMessageForm';
 import LoginIllustration from './LoginIllustration';
 import './chatbox.css';
@@ -14,6 +14,13 @@ import VoiceChatter from './VoiceChatter';
 function typingStatusFromUsers(users) {
   if (users.length === 0) return '';
   return `${users.join(', ')} ${users.length > 1 ? 'are' : 'is'} typing...`;
+}
+
+function injectScript(script) {
+  const scriptElt = document.createElement('script');
+  scriptElt.textContent = script;
+  (document.head || document.documentElement).appendChild(scriptElt);
+  scriptElt.remove();
 }
 
 class ChatBox extends React.Component {
@@ -35,7 +42,7 @@ class ChatBox extends React.Component {
       onlineUsers: [],
       typingUsers: [],
     };
-    this.socket = io('https://radiant-sierra-52862.herokuapp.com');
+    this.socket = io('https://binge-box.herokuapp.com');
     this.play = true;
     this.pause = true;
     this.seeking = false;
@@ -47,22 +54,42 @@ class ChatBox extends React.Component {
     this.wasPlayingBeforeBuffer = null;
     this.typingTimeout = {};
     this.bufferObserver = null;
+    this.isBuffering = !!(document.querySelector('.AkiraPlayerSpinner--container'));
 
     this.handleVideoEvents = this.handleVideoEvents.bind(this);
-    this.netflixAPI = window.netflix.appContext.state.playerApp.getAPI();
-    this.sessionId = this.netflixAPI.videoPlayer.getAllPlayerSessionIds();
-    this.currentVideoId = this.netflixAPI.getVideoIdBySessionId(this.sessionId);
-    this.videoPlayer = this.netflixAPI.videoPlayer.getVideoPlayerBySessionId(this.sessionId);
-    [this.video] = document.getElementsByTagName('video');
+    this.video = document.getElementsByTagName('video')[0];
+    injectScript(`window.addEventListener('message', (receiveMsg) => {
+      const netflixAPI = window.netflix.appContext.state.playerApp.getAPI();
+      const sessionId = netflixAPI.videoPlayer.getAllPlayerSessionIds();
+      const currentVideoId = netflixAPI.getVideoIdBySessionId(sessionId);
+      const videoPlayer = netflixAPI.videoPlayer.getVideoPlayerBySessionId(sessionId);
+      if(receiveMsg.data.type && receiveMsg.data.type === 'seek' && receiveMsg.data.time) {
+      videoPlayer.seek(receiveMsg.data.time);
+      }
+  }, false);`);
   }
 
   componentDidMount() {
+    const buffer = document.querySelector('.nf-player-container');
     if (this.video) {
       this.video.addEventListener('pause', this.handleVideoEvents);
       this.video.addEventListener('play', this.handleVideoEvents);
       this.video.addEventListener('seeked', this.handleVideoEvents);
       this.video.addEventListener('seeking', this.handleVideoEvents);
     }
+
+    this.bufferObserver = new MutationObserver(() => {
+      if (this.isBuffering && !document.querySelector('.AkiraPlayerSpinner--container')) {
+        this.isBuffering = false;
+        this.socket.emit('client sync', { type: 'BUFFER STARTED' });
+      }
+
+      if (!this.isBuffering && document.querySelector('.AkiraPlayerSpinner--container')) {
+        this.isBuffering = true;
+        this.socket.emit('client sync', { type: 'BUFFER ENDED' });
+      }
+    });
+    this.bufferObserver.observe(buffer, { childList: true });
 
     this.socket.on('update users list', (onlineUsers) => {
       this.setState({ onlineUsers });
@@ -83,37 +110,86 @@ class ChatBox extends React.Component {
       this.setState({ receivedMsgs });
     });
     this.socket.on('send time', () => {
-      this.socket.emit('rec time', { time: this.videoPlayer.getCurrentTime(), paused: this.videoPlayer.isPaused() });
+      this.socket.emit('rec time', { time: this.video.currentTime * 1000, paused: this.video.paused });
     });
     this.socket.on('set time', (state) => {
-      this.videoPlayer.seek(state.time);
-      if (state.paused !== this.videoPlayer.isPaused()) {
-        if (state.paused) {
-          this.videoPlayer.pause();
-          this.performSync = false;
-        } else {
-          this.videoPlayer.play();
-          this.performSync = false;
+      if (this.video) {
+        this.eventQueue.push({ timeUpdate: true, time: state.time });
+        if (state.paused !== this.video.paused) {
+          if (state.paused) {
+            this.eventQueue.push({ pause: true });
+            this.performSync = false;
+          } else {
+            this.eventQueue.push({ play: true });
+            this.performSync = false;
+          }
         }
+      }
+      if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager(this.eventQueue[0]);
+    });
+
+    this.socket.on('typing', (nickname) => {
+      const { typingUsers } = { ...this.state };
+
+      if (!typingUsers.includes(nickname)) {
+        typingUsers.push(nickname);
+        this.setState({ typingUsers });
+
+        const id = setTimeout(() => {
+          const { typingUsers } = { ...this.state };
+          this.setState({ typingUsers: typingUsers.filter((user) => user !== nickname) });
+        }, 3000);
+        this.typingTimeout[nickname] = id;
+      } else {
+        if (this.typingTimeout[nickname]) {
+          clearTimeout(this.typingTimeout[nickname]);
+        }
+
+        const id = setTimeout(() => {
+          const { typingUsers } = { ...this.state };
+          this.setState({ typingUsers: typingUsers.filter((user) => user !== nickname) });
+        }, 3000);
+        this.typingTimeout[nickname] = id;
       }
     });
 
     this.socket.on('perform sync', (data) => {
+      const { receivedMsgs } = { ...this.state };
       switch (data.type) {
         case 'PAUSE':
-          this.pause = false;
-          this.videoPlayer.pause();
+          receivedMsgs.unshift({ status: 'PAUSE', nickname: data.nickname });
+          this.setState({ receivedMsgs });
+          this.eventQueue.push({ pause: true });
           break;
         case 'PLAY':
-          this.play = false;
-          this.videoPlayer.play();
+          receivedMsgs.unshift({ status: 'PLAY', nickname: data.nickname });
+          this.setState({ receivedMsgs });
+          this.eventQueue.push({ play: true });
           break;
         case 'SEEKING':
-          this.videoPlayer.seek(data.value);
+          receivedMsgs.unshift({ status: 'SEEKING', nickname: data.nickname, time: data.value });
+          this.setState({ receivedMsgs });
+          this.eventQueue.push({ timeUpdate: true, time: data.value, paused: data.paused });
+          break;
+        case 'BUFFER STARTED':
+          receivedMsgs.unshift({ status: 'BUFFER', nickname: data.nickname });
+          this.setState({ receivedMsgs });
+          if (this.bufferCounter === 0) {
+            this.wasPlayingBeforeBuffer = !this.video.paused;
+            if (this.wasPlayingBeforeBuffer) this.eventQueue.push({ pause: true });
+          }
+          this.bufferCounter += 1;
+          break;
+        case 'BUFFER ENDED':
+          this.bufferCounter -= 1;
+          if (this.bufferCounter === 0 && this.wasPlayingBeforeBuffer) {
+            this.eventQueue.push({ play: true, buffer: true });
+          }
           break;
         default:
           // do nothing
       }
+      if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager(this.eventQueue[0]);
     });
   }
 
@@ -124,18 +200,65 @@ class ChatBox extends React.Component {
       this.video.removeEventListener('seeked', this.handleVideoEvents);
       this.video.removeEventListener('seeking', this.handleVideoEvents);
     }
+    if (this.bufferObserver) {
+      this.bufferObserver.disconnect();
+      this.bufferObserver = null;
+    }
     this.socket.disconnect();
+  }
+
+  pauseVideo(target) {
+    this.pause = false;
+    target.pause();
+    this.eventQueue.shift();
+  }
+
+  seekVideo(target, time, paused) {
+    this.userSeeked = false;
+    const seek = (tr, ti, state) => new Promise((resolve) => {
+      const fn = () => {
+        tr.removeEventListener('seeked', fn);
+        resolve();
+      };
+      tr.addEventListener('seeked', fn);
+      // tr.currentTime = ti;
+      window.postMessage({ type: 'seek', time: ti }, '*');
+      if (state) tr.play().then(() => tr.pause());
+    });
+    seek(target, time, paused).then(this.eventQueue.shift());
+  }
+
+  playVideo(target, buffer) {
+    if (!buffer) this.play = false;
+    target.play().then(this.eventQueue.shift());
+  }
+
+  queueManager(queue) {
+    this.queueManagerRunning = true;
+    if (queue.pause) this.pauseVideo(this.video);
+    else if (queue.play) this.playVideo(this.video, queue.buffer);
+    else if (queue.timeUpdate) this.seekVideo(this.video, this.eventQueue[0].time, this.eventQueue[0].paused);
+    if (this.eventQueue[0]) this.queueManager(this.eventQueue[0]);
+    else this.queueManagerRunning = false;
+  }
+
+  seek(time) {
+    window.postMessage({ type: 'seek', time }, '*');
   }
 
   handleVideoEvents(event) {
     switch (event.type) {
       case 'pause':
-        if (this.pause && this.seeking !== true) {
-          this.socket.emit('client sync', { type: 'PAUSE' });
-        } else this.pause = true;
+        if (this.bufferCounter === 0) {
+          if (this.pause && this.video.readyState === 4) {
+            this.socket.emit('client sync', { type: 'PAUSE' });
+          } else this.pause = true;
+        }
         break;
       case 'play':
-        if (this.play && this.seeking !== true) {
+        if (this.bufferCounter > 0) {
+          this.video.pause();
+        } else if (this.play && this.video.readyState === 4) {
           this.socket.emit('client sync', { type: 'PLAY' });
         } else this.play = true;
         break;
@@ -147,17 +270,16 @@ class ChatBox extends React.Component {
       case 'seeking':
         if (this.seeking !== true) {
           this.seeking = true;
-          this.socket.emit('client sync', { type: 'SEEKING', value: this.videoPlayer.getCurrentTime() });
+          if (this.userSeeked) {
+            this.socket.emit('client sync', { type: 'SEEKING', value: this.video.currentTime * 1000 });
+          }
+          this.userSeeked = true;
         } else this.seeking = true;
         break;
       default:
         // do nothing
     }
   }
-
-  // updatePlayingTime(event) {
-  //   this.setState({ playingTime: event.target.currentTime });
-  // }
 
   displayError(errorMsg) {
     this.setState({ errorMsg });
@@ -212,7 +334,16 @@ class ChatBox extends React.Component {
 
   render() {
     const {
-      currentSession, receivedMsgs, nicknameInput, errorMsg, errorMsgJoin, joinSessionInput, isVisible, liveCalls, onlineUsers,
+      currentSession,
+      receivedMsgs,
+      nicknameInput,
+      errorMsg,
+      errorMsgJoin,
+      joinSessionInput,
+      isVisible,
+      liveCalls,
+      onlineUsers,
+      typingUsers,
     } = { ...this.state };
     return (
       <>
@@ -283,7 +414,9 @@ class ChatBox extends React.Component {
                 <div id="collapse-chat" className="collapse-btn" onClick={() => this.showHide()}><MdLastPage style={{ width: '100%', height: '100%' }} /></div>
                 <CopyToClipboard text={currentSession}>
                   <div className="username-input" id="copy-session">
-                    Share your session ID
+                    Share your session ID -
+                    {' '}
+                    {currentSession}
                   </div>
                 </CopyToClipboard>
               </div>
@@ -293,6 +426,9 @@ class ChatBox extends React.Component {
             </div>
             <div id="chat-message-list">
               {receivedMsgs.map((messageData) => <Message username={nicknameInput} messageData={messageData} userId={this.socket.id} />)}
+            </div>
+            <div className="typing-status">
+              <span>{typingStatusFromUsers(typingUsers)}</span>
             </div>
             <SendMessageForm socket={this.socket} />
           </>
