@@ -42,7 +42,7 @@ class ChatBox extends React.Component {
       onlineUsers: [],
       typingUsers: [],
     };
-    this.socket = io('https://radiant-sierra-52862.herokuapp.com');
+    this.socket = io('https://binge-box.herokuapp.com');
     this.play = true;
     this.pause = true;
     this.seeking = false;
@@ -65,7 +65,6 @@ class ChatBox extends React.Component {
       const videoPlayer = netflixAPI.videoPlayer.getVideoPlayerBySessionId(sessionId);
       if(receiveMsg.data.type && receiveMsg.data.type === 'seek' && receiveMsg.data.time) {
       videoPlayer.seek(receiveMsg.data.time);
-          console.log("Haa");
       }
   }, false);`);
   }
@@ -83,7 +82,6 @@ class ChatBox extends React.Component {
       if (this.isBuffering && !document.querySelector('.AkiraPlayerSpinner--container')) {
         this.isBuffering = false;
         this.socket.emit('client sync', { type: 'BUFFER STARTED' });
-        console.log('buffer. enned');
       }
 
       if (!this.isBuffering && document.querySelector('.AkiraPlayerSpinner--container')) {
@@ -221,7 +219,6 @@ class ChatBox extends React.Component {
       const fn = () => {
         tr.removeEventListener('seeked', fn);
         resolve();
-        console.log(this.eventQueue);
       };
       tr.addEventListener('seeked', fn);
       // tr.currentTime = ti;
@@ -417,7 +414,9 @@ class ChatBox extends React.Component {
                 <div id="collapse-chat" className="collapse-btn" onClick={() => this.showHide()}><MdLastPage style={{ width: '100%', height: '100%' }} /></div>
                 <CopyToClipboard text={currentSession}>
                   <div className="username-input" id="copy-session">
-                    Share your session ID
+                    Share your session ID -
+                    {' '}
+                    {currentSession}
                   </div>
                 </CopyToClipboard>
               </div>

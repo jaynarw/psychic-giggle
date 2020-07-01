@@ -35,7 +35,7 @@ class ChatBox extends React.Component {
       onlineUsers: [],
       typingUsers: [],
     };
-    this.socket = io('https://radiant-sierra-52862.herokuapp.com');
+    this.socket = io('https://binge-box.herokuapp.com');
     this.play = true;
     this.pause = true;
     this.seeking = false;
@@ -407,7 +407,9 @@ class ChatBox extends React.Component {
                 <div id="collapse-chat" className="collapse-btn" onClick={() => this.showHide()}><MdLastPage style={{ width: '100%', height: '100%' }} /></div>
                 <CopyToClipboard text={currentSession}>
                   <div className="username-input" id="copy-session">
-                    Share your session ID
+                    Share your session ID -
+                    {' '}
+                    {currentSession}
                   </div>
                 </CopyToClipboard>
               </div>
