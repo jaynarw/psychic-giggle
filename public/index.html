@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title>Binge Box - Watch Movies together with friends and family</title>
+        <meta name="description" content="Learn how to create a fullscreen slideshow for your scrolling website.">
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        <!--Import materialize.css-->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+        <!--iOS -->
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+        <style>
+            @font-face {
+            font-family: 'altdin';
+            src: url(css/altdin.ttf);
+            }
+            .js-scroll-show {
+                box-sizing: border-box;
+                width: 100%;
+            }
+            .scroll-show__image-container {
+                height: 100vh;
+                width: 50%;
+                opacity: 0;
+                position: fixed;
+                left: 0;
+                top: 0;
+            }
+            .scroll-show__image-container {
+                /* position: relative; */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: gray;
+                /* width: 100%; */
+                overflow: hidden;
+                transition: opacity .4s cubic-bezier(.4,0,.2,1);
+            }
+            .scroll-show__slide {
+                display: flex;
+                justify-content: flex-end;
+            }
+            .show-gun .scroll-show__image-container {
+                opacity: 1;
+            }
+            .scroll-show__text-container {
+                display: flex;
+                justify-content: start;
+                position: relative;
+                box-sizing: border-box;
+                min-height: 100vh;
+                width: 50%;
+                padding: 5rem;
+                padding-top: 10rem;
+                padding-bottom: 3rem;
+            }
+            .head {
+                width: 80%;
+                
+            }
+            nav {
+                background-color: #121212;
+            }
+            .logo-binge {
+                font-family: 'altdin';
+            }
+            .main-desc {
+                text-align: center;
+            }
+            nav ul li {
+                box-sizing: border-box!important;
+                height: 100%;
+                transition: border-bottom-width .15s cubic-bezier(.4,0,.2,1);
+            }
+            nav ul {
+                box-sizing: border-box;
+                height: 100%;
+            }
+            nav ul li:hover {
+                background-color: rgba(0,0,0,0.1);
+                border-bottom: solid .25rem;
+                border-bottom-color: #bb86fc;
+            }
+            .rich-text {
+                font-size: 1.375rem;
+                font-weight: 400;
+                font-style: normal;
+                line-height: 2rem;
+                letter-spacing: .1px;
+                color: rgba(255,255,255,0.8);
+            }
+            .rich-text h1,h2,h3,h4,h5,h6 {
+                color: white;
+            }
+            .desc{
+                color: rgba(255,255,255,0.8);
+            }
+            .custom-blue {
+                color: #039be5!important;
+    opacity: 0.8;
+            }
+            .fill {
+                background-repeat: no-repeat;
+                background-position: center;
+                background-size: contain;
+            }
+        </style>
+
+    </head>
+    <body class="grey darken-4 grey-text text-lighten-5">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+        <nav>
+            <div class="nav-wrapper container head">
+              <a href="#" class="brand-logo logo-binge"><span class="">Binge</span><span class="custom-blue">Box</span></a>
+              <ul id="nav-mobile" class="right hide-on-med-and-down">
+                <li><a data-target="new-way" >About</a></li>
+                <li><a data-target="features">Features</a></li>
+                <li><a data-target="how-it-works">How it works</a></li>
+              </ul>
+            </div>
+          </nav>
+          <div class="container" style="width: 80%; font-family: 'Roboto', sans-serif;">
+            <div class="row main-desc">
+                <h2 class="offset-s3 col s6">BingeBox</h2>
+            </div>
+            <div class="row">
+                <h5 class="col s8 offset-s2 desc" style="line-height: 2.25rem;">
+                    BingeBox is a Chrome extension for watching Prime Video & Netflix remotely with friends , e.g., for movie nights with that long-distance special someone.
+                    It synchronizes video playback and adds group voice call and chat. Gives the feel of theatre.
+                    </h5>
+            </div>
+            
+          </div>
+        <!--[if lt IE 7]>
+            <p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</p>
+        <![endif]-->
+
+		<!-- Demo content -->			
+        <div class="js-scroll-show">
+    
+      
+            <div id="new-way" class="scroll-show__slide" data-url-hash="" style="align-items: flex-end;">
+              
+                <div class="scroll-show__image-container show viewport-fix" style="background-image: url('https://storage.googleapis.com/gd-wagtail-prod-assets/original_images/G-Photos_FINAL_0605.png');">
+                </div>
+              
+              <div class="scroll-show__text-container">
+                <div class="scroll-show__text-column">
+                  
+                  <h3 class="scroll-show__title" tabindex="0">A new way to watch at home together</h3>
+                  <div class="rich-text"><p>Binge Box is a new way to watch Prime Videos and Netflix with your friends online.<br>  Binge Box synchronizes video playback and adds group calls and chat to your favorite shows.<br>
+                    Join over people and use Binge Box to link up with friends and host long distance movie nights and TV watch parties today!
+                    </p></div>
+                </div>
+              </div>
+            </div>
+          
+          
+        
+          
+              
+                
+            <div id="features" class="scroll-show__slide" data-url-hash="" style="align-items: flex-end;">
+              
+                <div class="scroll-show__image-container viewport-fix fill" style="background-image: url('img/5.png');">
+                </div>
+              
+              <div class="scroll-show__text-container">
+                <div class="scroll-show__text-column">
+                  
+                  <h2 class="scroll-show__title" tabindex="0">Features</h2>
+                  <div class="rich-text">
+                      
+                        <h4>Sync Movies & Shows in HD</h4>
+                        <p>
+                            Always stay precisely in sync when you're watching shows together. Enjoy HD video quality and fast buffering in all of your Binge parties.
+                        </p>
+                        
+                        <h4>Instant Connect</h4>
+                        <p>Create parties in seconds right on the Netflix.com website to watch thousands of great Netflix shows together with friends.</p>
+                        
+                        <h4>Group Voice call</h4>
+                        <p>While the video is playing, users can socialize with other participants through a built-in chat feature that supports both call and text with built-in emojis.</p>
+                    </div>
+                </div>
+              </div>
+            </div>
+
+            <div id="how-it-works" class="scroll-show__slide" data-url-hash="" style="align-items: flex-end;">
+              
+                <div class="scroll-show__image-container fill viewport-fix" style="background-image: url('img/1.png');background-color: #feda7a;">
+                </div>
+              
+              <div class="scroll-show__text-container">
+                <div class="scroll-show__text-column">
+                  
+                  <h2 class="scroll-show__title" tabindex="0">How it works</h2>
+                  <div class="rich-text">
+                      <ol>
+                        <li>Install Binge Box</li>
+                        <li>Open a Prime Video or Netflix video</li>
+                        <li>Create a Binge party</li>
+                        <li>Join a Binge Box party</li>
+                      </ol>
+                                         
+                    </div>
+                </div>
+              </div>
+            </div>
+          
+              
+        </div>
+<script>
+(function(){
+	function debounce(fn, ms) { // https://remysharp.com/2010/07/21/throttling-function-calls
+		var time = null;
+		return function() {
+			var a = arguments, t = this;
+			clearTimeout(time);
+			time = setTimeout(function() { fn.apply(t, a); }, ms);
+			}
+		}
+	function throttle(fn, ms) { // Ryan Taylor comment - https://remysharp.com/2010/07/21/throttling-function-calls
+		var time, last = 0;
+		return function() {
+			var a = arguments, t = this, now = +(new Date), exe = function() { last = now; fn.apply(t, a); };
+			clearTimeout(time);
+			(now >= last + ms) ? exe() : time = setTimeout(exe, ms);
+			}
+		}
+	function hasClass(el, cls) {
+		if (el.className.match('(?:^|\\s)'+cls+'(?!\\S)')) { return true; } 
+		}
+	function addClass(el, cls) {
+		if (!el.className.match('(?:^|\\s)'+cls+'(?!\\S)')) { el.className += ' '+cls; } 
+		}
+	function delClass(el, cls) {
+		el.className = el.className.replace(new RegExp('(?:^|\\s)'+cls+'(?!\\S)'),'');
+		}
+
+	document.documentElement.className += ' js'; // adds class="js" to <html> element
+
+	function elementFromTop(elem, classToAdd, distanceFromTop, unit) {
+		var winY = window.innerHeight || document.documentElement.clientHeight, 
+		elemLength = elem.length, distTop, distPercent, distPixels, distUnit, i;
+		for (i = 0; i < elemLength; ++i) {
+			distTop = elem[i].getBoundingClientRect().top;
+			distPercent = Math.round((distTop / winY) * 100);
+			distPixels = Math.round(distTop);
+			distUnit = unit == 'percent' ? distPercent : distPixels;
+			if (distUnit <= distanceFromTop) {
+				if (!hasClass(elem[i], classToAdd)) { addClass(elem[i], classToAdd); }
+				} else {
+				delClass(elem[i], classToAdd);
+				}
+			}
+		}
+	// params: element, classes to add, distance from top, unit ('percent' or 'pixels')
+
+	window.addEventListener('scroll', throttle(function() {
+		elementFromTop(document.querySelectorAll('#new-way'),  'show-gun',  0, 'pixels'); // as top of element hits top of viewport
+        elementFromTop(document.querySelectorAll('#features'),       'show-gun',       0, 'pixels');
+        elementFromTop(document.querySelectorAll('#how-it-works'),       'show-gun',       0, 'pixels');
+		elementFromTop(document.querySelectorAll('.white'),        'bg--white bg--fixed',      100, 'percent'); // as top of element enters bottom of viewport 
+		}, 100), false);
+
+	window.addEventListener('resize', debounce(function() {
+		elementFromTop(document.querySelectorAll('#new-way'),  'show-gun',  0, 'pixels'); // as top of element hits top of viewport
+        elementFromTop(document.querySelectorAll('#features'),       'show-gun',       0, 'pixels');
+        elementFromTop(document.querySelectorAll('#how-it-works'),       'show-gun',       0, 'pixels');
+		elementFromTop(document.querySelectorAll('.white'),        'bg--white bg--fixed',      100, 'percent'); // as top of element enters bottom of viewport 
+		}, 100), false);
+})();
+
+const navLinks = document.querySelectorAll('nav ul a');
+navLinks.forEach((link) => {
+    link.onclick = () => {
+        document.getElementById(link.getAttribute('data-target')).scrollIntoView({ behavior: "smooth" });
+    }
+})
+</script>
+    </body>
+</html>

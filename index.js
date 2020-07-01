@@ -1,28 +1,21 @@
 /* eslint-disable no-console */
 const remove = require('lodash/remove');
+const express = require('express');
 
-const app = require('express')();
+const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const { v4: uuidv4 } = require('uuid');
-// const mongoose = require('mongoose');
+const path = require('path');
+const public = path.join(__dirname, 'public');
 
 const port = process.env.PORT || 80;
 
-// mongoose.connect('mongodb://localhost/test', { useNewUrlParser: true, useUnifiedTopology: true });
-
 app.get('/', (req, res) => {
-  res.sendFile(`${__dirname}/www/index.html`);
+  res.sendFile(path.join(public, 'index.html'));
 });
-app.get('/audio', (req, res) => {
-  res.sendFile(`${__dirname}/www/audio.html`);
-});
-app.get('/audio.js', (req, res) => {
-  res.sendFile(`${__dirname}/www/audio.js`);
-});
-app.get('/js/socket.io.js', (req, res) => {
-  res.sendFile(`${__dirname}/node_modules/socket.io-client/dist/socket.io.js`);
-});
+
+app.use('/', express.static(public));
 
 http.listen(port);
 
@@ -32,6 +25,7 @@ const syncTimeSockets = {};
 
 function validateNickname(nickname) {
   if (typeof nickname === 'string') {
+    if (nickname.trim() === '') return 'Nickname cannot be blank';
     if (nickname.length === 0) return 'Nickname length should be greater than zero.';
     if (nickname.length > 15) return 'Nickname length should be less than 15.';
     return true;
@@ -191,64 +185,3 @@ io.on('connection', (socket) => {
     }
   });
 });
-// let activeAudioSockets = [];
-// const audioNsp = io.of('/audio');
-// audioNsp.on('connection', (socket) => {
-//   const existingSocket = activeAudioSockets.find(
-//     (existingSocket) => existingSocket === socket.id,
-//   );
-
-//   if (!existingSocket) {
-//     activeAudioSockets.push(socket.id);
-
-//     socket.emit('update-user-list', {
-//       users: activeAudioSockets.filter(
-//         (existingSocket) => existingSocket !== socket.id,
-//       ),
-//     });
-
-//     socket.broadcast.emit('update-user-list', {
-//       users: [socket.id],
-//     });
-//   }
-
-//   //  break;
-// socket.on('offer', (data) => {
-//   if (activeAudioSockets.includes(data.target)) {
-//     console.log('Emmitting offer');
-//     audioNsp.to(data.target).emit('offer', {
-//       sdp: data.sdp,
-//       name: socket.id,
-//     });
-//   } else {
-//     console.log('Cannot offer');
-//   }
-// });
-// socket.on('answer', (data) => {
-//   if (activeAudioSockets.includes(data.target)) {
-//     audioNsp.to(data.target).emit('answer', { name: socket.id, sdp: data.sdp });
-//   } else {
-//     console.log('Not found socket answer', data.target);
-//   }
-// });
-// socket.on('candidate', (data) => {
-//   if (activeAudioSockets.includes(data.target)) {
-//     audioNsp.to(data.target).emit('candidate', { name: socket.id, candidate: data.candidate });
-//   } else {
-//     console.log('Not found socket cnd', data.target);
-//   }
-// });
-//   socket.on('leave', (data) => {
-//     if (activeAudioSockets.includes(data.socketid)) {
-//       audioNsp.to(data.socketid).emit('leave');
-//     }
-//   });
-//   socket.on('disconnect', () => {
-//     activeAudioSockets = activeAudioSockets.filter(
-//       (activeSockets) => activeSockets !== socket.id,
-//     );
-//     socket.broadcast.emit('remove-user', {
-//       socketId: socket.id,
-//     });
-//   });
-// });
