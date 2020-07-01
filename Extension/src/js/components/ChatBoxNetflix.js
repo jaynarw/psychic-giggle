@@ -4,7 +4,7 @@ import * as io from 'socket.io-client';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import ReactTooltip from 'react-tooltip';
 import { MdLastPage, MdFirstPage } from 'react-icons/md';
-import Message from './Message';
+import Message from './MessageNetflix';
 import SendMessageForm from './SendMessageForm';
 import LoginIllustration from './LoginIllustration';
 import './chatbox.css';

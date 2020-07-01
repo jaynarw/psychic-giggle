@@ -6,11 +6,12 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 
 module.exports = {
+  // devtool: 'source-map',
   entry: {
     content: './js/contentScript.js',
     contentNetflix: './js/contentScriptNetflix.js',
-    popup: './js/popup.js',
-    background: './js/background.js',
+    // popup: './js/popup.js',
+    // background: './js/background.js',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -84,8 +85,8 @@ module.exports = {
     new CopyWebpackPlugin({
       patterns: [
         { from: 'chrome/img', to: 'img' },
-        // { from: 'chrome/css', to: 'css' },
-        { from: '*.html' },
+        // { from: '*.html' },
+        { from: 'js/background.js', to: 'js' },
         { from: 'chrome/manifest.json' },
       ],
     }),
