@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "BingeBox",
-    "description": "Use psychic powers to sync videos and chat with friends",
+    "description": "Watch Prime Video and Netflix remotely with friends with built in chat and with a feature of group voice call. Just gives the feel of theatre.",
     "version": "0.0.0.1",
     "icons": {
       "16": "img/16.png",
