@@ -17,6 +17,7 @@ class SendMessageForm extends React.Component {
       message: '',
       showEmojiPicker: false,
       showGiphySearch: true,
+      giphySearchIndex: 'gifs',
     };
     this.handleKeyPress = this.handleKeyPress.bind(this);
   }
@@ -57,31 +58,53 @@ class SendMessageForm extends React.Component {
 
   handleGifSelection(gif) {
     const { socket } = this.props;
-    this.setState((prevState) => ({ showGiphySearch: !prevState.showGiphySearch }));
+    this.setState((prevState) => ({ 
+      showGiphySearch: !prevState.showGiphySearch,
+      showEmojiPicker: !prevState.showEmojiPicker,
+    }));
     console.log(gif, gif.id);
     socket.emit('gif msg', gif.id);
   }
 
+  handleGifSearchClick(e) {
+    const { target } = event;
+    const { giphySearchIndex } = { ...this.state };
+    const clickedIndex = target.getAttribute('data-target');
+    if (clickedIndex !== giphySearchIndex) {
+      this.setState({ giphySearchIndex: clickedIndex });
+    }
+  }
+
   render() {
-    const { showEmojiPicker, showGiphySearch, message } = { ...this.state };
+    const {
+      showEmojiPicker, showGiphySearch, giphySearchIndex, message,
+    } = { ...this.state };
     return (
       <div className="message-form-wrapper">
-        {showEmojiPicker && (
+        {/* {showEmojiPicker && (
           <EmojiPicker toggle={() => this.togglePicker()} addEmoji={(e) => this.addEmoji(e)} />
-        )}
-        {showGiphySearch && (
+        )} */}
+        {showEmojiPicker && (
           <div className="emoji-picker-wrapper searchboxWrapper">
+            <div>
+              <span data-target="gifs" onClick={(e) => this.handleGifSearchClick(e)}>GIFs</span>
+              <span data-target="stickers" onClick={(e) => this.handleGifSearchClick(e)}>Stickers</span>
+              <span data-target="emojis" onClick={(e) => this.handleGifSearchClick(e)}>Emojis</span>
+            </div>
+            {giphySearchIndex !== 'emojis' && (
             <ReactGiphySearchBox
               apiKey="lwiMnpcorQHdFIivZg43l3BJfJRlzdYO"
               onSelect={(item) => this.handleGifSelection(item)}
-              // library="stickers"
-              searchPlaceholder="Search for Stickers"
+              library={giphySearchIndex}
+              searchPlaceholder={`Search for ${giphySearchIndex.charAt(0).toUpperCase() + giphySearchIndex.slice(1)}`}
               masonryConfig={[
                 { columns: 2, imageWidth: 110, gutter: 5 },
               ]}
               listWrapperClassName="listWrapper"
               listItemClassName="imageButton"
             />
+            )}
+            {giphySearchIndex === 'emojis' && <EmojiPicker toggle={() => this.togglePicker()} addEmoji={(e) => this.addEmoji(e)} />}
           </div>
         )}
         <form
