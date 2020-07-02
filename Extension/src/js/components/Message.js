@@ -1,4 +1,5 @@
 import React from 'react';
+import { Gif } from '@giphy/react-components';
 
 function secondsToHms(d) {
   d = Number(d);
@@ -13,7 +14,7 @@ function secondsToHms(d) {
 }
 
 function Message(props) {
-  const { messageData, userId } = props;
+  const { messageData, userId, giphyFetch } = props;
   function getStatusMessage(data) {
     switch (data.status) {
       case 'PAUSE':
@@ -60,9 +61,18 @@ function Message(props) {
       {messageData.status && (
         getStatusMessage(messageData)
       )}
-      {!messageData.joined 
-      && !messageData.left 
+      {messageData.gifData && (
+        <div className={`message-row ${messageData.from === userId ? 'you-message' : 'other-message'}`}>
+          {messageData.from !== userId && <div className="message-from">{messageData.nickname}</div>}
+          <div className="message-text">
+            <Gif gif={messageData.gifData} backgroundColor="#121212" hideAttribution noLink />
+          </div>
+        </div>
+      )}
+      {!messageData.joined
+      && !messageData.left
       && !messageData.status
+      && !messageData.gifData
       && (
       <div className={`message-row ${messageData.from === userId ? 'you-message' : 'other-message'}`}>
         {messageData.from !== userId && <div className="message-from">{messageData.nickname}</div>}

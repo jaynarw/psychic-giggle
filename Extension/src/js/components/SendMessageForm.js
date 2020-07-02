@@ -3,7 +3,10 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 import ReactTextareaAutocomplete from '@webscopeio/react-textarea-autocomplete';
-import { Picker, emojiIndex } from 'emoji-mart';
+import ReactGiphySearchBox from 'react-giphy-searchbox';
+import { emojiIndex } from 'emoji-mart';
+import EmojiPicker from './EmojiPicker';
+
 import '@webscopeio/react-textarea-autocomplete/style.css';
 import 'emoji-mart/css/emoji-mart.css';
 
@@ -13,6 +16,7 @@ class SendMessageForm extends React.Component {
     this.state = {
       message: '',
       showEmojiPicker: false,
+      showGiphySearch: true,
     };
     this.handleKeyPress = this.handleKeyPress.bind(this);
   }
@@ -51,24 +55,34 @@ class SendMessageForm extends React.Component {
     this.setState((prevState) => ({ showEmojiPicker: !prevState.showEmojiPicker }));
   }
 
+  handleGifSelection(gif) {
+    const { socket } = this.props;
+    this.setState((prevState) => ({ showGiphySearch: !prevState.showGiphySearch }));
+    console.log(gif, gif.id);
+    socket.emit('gif msg', gif.id);
+  }
+
   render() {
-    const { showEmojiPicker, message } = { ...this.state };
+    const { showEmojiPicker, showGiphySearch, message } = { ...this.state };
     return (
       <div className="message-form-wrapper">
         {showEmojiPicker && (
-        <div className="emoji-picker-wrapper">
-          <Picker
-            native
-            theme="dark"
-            style={{ width: 'unset', margin: '10px' }}
-            onSelect={(e) => this.addEmoji(e)}
-            emojiTooltip
-            showPreview={false}
-            showSkinTones={false}
-            useButton={false}
-            sheetSize={16}
-          />
-        </div>
+          <EmojiPicker toggle={() => this.togglePicker()} addEmoji={(e) => this.addEmoji(e)} />
+        )}
+        {showGiphySearch && (
+          <div className="emoji-picker-wrapper searchboxWrapper">
+            <ReactGiphySearchBox
+              apiKey="lwiMnpcorQHdFIivZg43l3BJfJRlzdYO"
+              onSelect={(item) => this.handleGifSelection(item)}
+              // library="stickers"
+              searchPlaceholder="Search for Stickers"
+              masonryConfig={[
+                { columns: 2, imageWidth: 110, gutter: 5 },
+              ]}
+              listWrapperClassName="listWrapper"
+              listItemClassName="imageButton"
+            />
+          </div>
         )}
         <form
           className="send-message"
