@@ -33,6 +33,7 @@ function validateNickname(nickname) {
 }
 
 io.on('connection', (socket) => {
+  socket.emit('get-session');
   socket.on('msg', (message) => {
     const socketId = socket.id;
     if (socketSessionMap[socketId] && typeof socketSessionMap[socketId].session === 'string' && liveSessions[socketSessionMap[socketId].session]) {
