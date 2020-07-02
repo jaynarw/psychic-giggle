@@ -77,6 +77,16 @@ class ChatBox extends React.Component {
     this.socket.on('update users list', (onlineUsers) => {
       this.setState({ onlineUsers });
     });
+
+    this.socket.on('get-session', () => {
+      const {
+        currentSession, joinSessionInput, nicknameInput, nowPlaying,
+      } = { ...this.state };
+      if (currentSession && currentSession === joinSessionInput && nicknameInput && nowPlaying) {
+        this.joinSessionHandler();
+      }
+    });
+
     this.socket.on('msg-recieved', (data) => {
       const { receivedMsgs } = { ...this.state };
       receivedMsgs.unshift(data);
