@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
-    "name": "BingeBox",
-    "description": "Use psychic powers to sync videos and chat with friends",
+    "name": "BingeBox - Watch movies with Voice chat",
+    "description": "Watch Prime Video and Netflix remotely with friends using built in chat and group voice call.",
     "version": "0.0.0.1",
     "icons": {
       "16": "img/16.png",
@@ -27,6 +27,5 @@
         "16": "img/16.png"
       },
       "default_title": "BingeBox"      
-    },
-    "permissions": ["storage"]
+    }
   }
