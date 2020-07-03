@@ -122,7 +122,7 @@ io.on('connection', (socket) => {
   socket.on('client sync', (data) => {
     const socketId = socket.id;
     if (socketSessionMap[socketId] && typeof socketSessionMap[socketId].session === 'string' && liveSessions[socketSessionMap[socketId].session]) {
-      io.to(socketSessionMap[socketId].session).emit('perform sync', { ...data, nickname: socketSessionMap[socketId].nickname });
+      socket.to(socketSessionMap[socketId].session).emit('perform sync', { ...data, nickname: socketSessionMap[socketId].nickname });
     }
   });
 
