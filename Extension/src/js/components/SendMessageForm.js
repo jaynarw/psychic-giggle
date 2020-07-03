@@ -3,7 +3,9 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 import ReactTextareaAutocomplete from '@webscopeio/react-textarea-autocomplete';
-import { Picker, emojiIndex } from 'emoji-mart';
+import { emojiIndex } from 'emoji-mart';
+import GifOrEmojiPicker from './GIfOrEmojiPicker';
+
 import '@webscopeio/react-textarea-autocomplete/style.css';
 import 'emoji-mart/css/emoji-mart.css';
 
@@ -13,6 +15,7 @@ class SendMessageForm extends React.Component {
     this.state = {
       message: '',
       showEmojiPicker: false,
+      giphySearchIndex: 'gifs',
     };
     this.handleKeyPress = this.handleKeyPress.bind(this);
   }
@@ -51,24 +54,50 @@ class SendMessageForm extends React.Component {
     this.setState((prevState) => ({ showEmojiPicker: !prevState.showEmojiPicker }));
   }
 
+  togglePickerButton(e) {
+    const { showEmojiPicker } = { ...this.state };
+    if (!showEmojiPicker) {
+      this.setState({ showEmojiPicker: true });
+    }
+    e.stopPropagation();
+  }
+
+  handleGifSelection(gif) {
+    const { socket } = this.props;
+    this.setState((prevState) => ({
+      showGiphySearch: !prevState.showGiphySearch,
+      showEmojiPicker: !prevState.showEmojiPicker,
+    }));
+    console.log(gif, gif.id);
+    socket.emit('gif msg', gif.id);
+  }
+
+  handleGifSearchClick(event) {
+    const { target } = event;
+    const { giphySearchIndex } = { ...this.state };
+    const clickedIndex = target.getAttribute('data-target');
+    if (clickedIndex !== giphySearchIndex) {
+      this.setState({ giphySearchIndex: clickedIndex });
+    }
+  }
+
   render() {
-    const { showEmojiPicker, message } = { ...this.state };
+    const {
+      showEmojiPicker, giphySearchIndex, message,
+    } = { ...this.state };
     return (
       <div className="message-form-wrapper">
+        {/* {showEmojiPicker && (
+          <EmojiPicker toggle={() => this.togglePicker()} addEmoji={(e) => this.addEmoji(e)} />
+        )} */}
         {showEmojiPicker && (
-        <div className="emoji-picker-wrapper">
-          <Picker
-            native
-            theme="dark"
-            style={{ width: 'unset', margin: '10px' }}
-            onSelect={(e) => this.addEmoji(e)}
-            emojiTooltip
-            showPreview={false}
-            showSkinTones={false}
-            useButton={false}
-            sheetSize={16}
+          <GifOrEmojiPicker
+            giphySearchIndex={giphySearchIndex}
+            handleGifSearchClick={(e) => this.handleGifSearchClick(e)}
+            handleGifSelection={(item) => this.handleGifSelection(item)}
+            addEmoji={(e) => this.addEmoji(e)}
+            // toggle={() => this.togglePicker()}
           />
-        </div>
         )}
         <form
           className="send-message"

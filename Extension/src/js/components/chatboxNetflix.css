@@ -13,3 +13,6 @@
 #psychic-giggler textarea{
   width: auto;
 }
+.emoji-mart-dark .emoji-mart-search input {
+  width: -webkit-fill-available;
+}
