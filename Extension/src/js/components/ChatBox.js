@@ -4,6 +4,7 @@ import * as io from 'socket.io-client';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import ReactTooltip from 'react-tooltip';
 import { MdLastPage, MdFirstPage } from 'react-icons/md';
+import { GiphyFetch } from '@giphy/js-fetch-api';
 import Message from './Message';
 import SendMessageForm from './SendMessageForm';
 import LoginIllustration from './LoginIllustration';
@@ -36,6 +37,7 @@ class ChatBox extends React.Component {
       typingUsers: [],
     };
     this.socket = io('https://binge-box.herokuapp.com');
+    this.gf = new GiphyFetch('lwiMnpcorQHdFIivZg43l3BJfJRlzdYO');
     this.play = true;
     this.pause = true;
     this.seeking = false;
@@ -85,6 +87,19 @@ class ChatBox extends React.Component {
       if (currentSession && currentSession === joinSessionInput && nicknameInput && nowPlaying) {
         this.joinSessionHandler();
       }
+    });
+
+    this.socket.on('gif-msg-recieved', (gifMessage) => {
+      const { receivedMsgs } = { ...this.state };
+      this.gf.gif(gifMessage.gifId).then((fetchedGif) => {
+        const { data } = fetchedGif;
+        receivedMsgs.unshift({
+          from: gifMessage.from,
+          gifData: data,
+          nickname: gifMessage.nickname,
+        });
+        this.setState({ receivedMsgs });
+      });
     });
 
     this.socket.on('msg-recieved', (data) => {

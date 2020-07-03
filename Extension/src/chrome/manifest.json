@@ -27,5 +27,8 @@
         "16": "img/16.png"
       },
       "default_title": "BingeBox"      
-    }
+    },
+    "web_accessible_resources": [
+      "img/PoweredBy_200px-Black_HorizText.png"
+    ]
   }
