@@ -3,9 +3,8 @@
 /* eslint-disable react/prop-types */
 import React from 'react';
 import ReactTextareaAutocomplete from '@webscopeio/react-textarea-autocomplete';
-import ReactGiphySearchBox from 'react-giphy-searchbox';
 import { emojiIndex } from 'emoji-mart';
-import EmojiPicker from './EmojiPicker';
+import GifOrEmojiPicker from './GIfOrEmojiPicker';
 
 import '@webscopeio/react-textarea-autocomplete/style.css';
 import 'emoji-mart/css/emoji-mart.css';
@@ -16,7 +15,6 @@ class SendMessageForm extends React.Component {
     this.state = {
       message: '',
       showEmojiPicker: false,
-      showGiphySearch: true,
       giphySearchIndex: 'gifs',
     };
     this.handleKeyPress = this.handleKeyPress.bind(this);
@@ -56,9 +54,17 @@ class SendMessageForm extends React.Component {
     this.setState((prevState) => ({ showEmojiPicker: !prevState.showEmojiPicker }));
   }
 
+  togglePickerButton(e) {
+    const { showEmojiPicker } = { ...this.state };
+    if (!showEmojiPicker) {
+      this.setState({ showEmojiPicker: true });
+    }
+    e.stopPropagation();
+  }
+
   handleGifSelection(gif) {
     const { socket } = this.props;
-    this.setState((prevState) => ({ 
+    this.setState((prevState) => ({
       showGiphySearch: !prevState.showGiphySearch,
       showEmojiPicker: !prevState.showEmojiPicker,
     }));
@@ -66,7 +72,7 @@ class SendMessageForm extends React.Component {
     socket.emit('gif msg', gif.id);
   }
 
-  handleGifSearchClick(e) {
+  handleGifSearchClick(event) {
     const { target } = event;
     const { giphySearchIndex } = { ...this.state };
     const clickedIndex = target.getAttribute('data-target');
@@ -77,7 +83,7 @@ class SendMessageForm extends React.Component {
 
   render() {
     const {
-      showEmojiPicker, showGiphySearch, giphySearchIndex, message,
+      showEmojiPicker, giphySearchIndex, message,
     } = { ...this.state };
     return (
       <div className="message-form-wrapper">
@@ -85,27 +91,13 @@ class SendMessageForm extends React.Component {
           <EmojiPicker toggle={() => this.togglePicker()} addEmoji={(e) => this.addEmoji(e)} />
         )} */}
         {showEmojiPicker && (
-          <div className="emoji-picker-wrapper searchboxWrapper">
-            <div>
-              <span data-target="gifs" onClick={(e) => this.handleGifSearchClick(e)}>GIFs</span>
-              <span data-target="stickers" onClick={(e) => this.handleGifSearchClick(e)}>Stickers</span>
-              <span data-target="emojis" onClick={(e) => this.handleGifSearchClick(e)}>Emojis</span>
-            </div>
-            {giphySearchIndex !== 'emojis' && (
-            <ReactGiphySearchBox
-              apiKey="lwiMnpcorQHdFIivZg43l3BJfJRlzdYO"
-              onSelect={(item) => this.handleGifSelection(item)}
-              library={giphySearchIndex}
-              searchPlaceholder={`Search for ${giphySearchIndex.charAt(0).toUpperCase() + giphySearchIndex.slice(1)}`}
-              masonryConfig={[
-                { columns: 2, imageWidth: 110, gutter: 5 },
-              ]}
-              listWrapperClassName="listWrapper"
-              listItemClassName="imageButton"
-            />
-            )}
-            {giphySearchIndex === 'emojis' && <EmojiPicker toggle={() => this.togglePicker()} addEmoji={(e) => this.addEmoji(e)} />}
-          </div>
+          <GifOrEmojiPicker
+            giphySearchIndex={giphySearchIndex}
+            handleGifSearchClick={(e) => this.handleGifSearchClick(e)}
+            handleGifSelection={(item) => this.handleGifSelection(item)}
+            addEmoji={(e) => this.addEmoji(e)}
+            // toggle={() => this.togglePicker()}
+          />
         )}
         <form
           className="send-message"

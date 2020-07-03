@@ -64,7 +64,7 @@ function Message(props) {
       {messageData.gifData && (
         <div className={`message-row ${messageData.from === userId ? 'you-message' : 'other-message'}`}>
           {messageData.from !== userId && <div className="message-from">{messageData.nickname}</div>}
-          <div className="message-text">
+          <div className={messageData.gifData.is_sticker ? '' : 'message-text'}>
             <Gif gif={messageData.gifData} backgroundColor="#121212" hideAttribution noLink />
           </div>
         </div>
