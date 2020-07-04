@@ -125,7 +125,6 @@ class ChatBox extends React.Component {
       const { currentVideo } = { ...this.state };
       if (currentVideo) {
         // currentVideo.currentTime = state.time;
-        this.eventQueue.push({ timeUpdate: true, time: state.time });
         if (state.paused !== currentVideo.paused) {
           if (state.paused) {
             this.eventQueue.push({ pause: true });
@@ -137,8 +136,9 @@ class ChatBox extends React.Component {
             this.performSync = false;
           }
         }
+        this.eventQueue.push({ timeUpdate: true, time: state.time });
       }
-      if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager(this.eventQueue[0]);
+      if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager();
     });
 
     this.socket.on('typing', (nickname) => {
@@ -170,33 +170,39 @@ class ChatBox extends React.Component {
       const { currentVideo, receivedMsgs } = { ...this.state };
       switch (data.type) {
         case 'PAUSE':
+          console.log('Received pause');
           receivedMsgs.unshift({ status: 'PAUSE', nickname: data.nickname });
           this.setState({ receivedMsgs });
           this.eventQueue.push({ pause: true });
           // currentVideo.pause();
           break;
         case 'PLAY':
+          console.log('Received play');
           receivedMsgs.unshift({ status: 'PLAY', nickname: data.nickname });
           this.setState({ receivedMsgs });
           this.eventQueue.push({ play: true });
           // currentVideo.play();
           break;
         case 'SEEKING':
+          console.log('Received seeking');
           receivedMsgs.unshift({ status: 'SEEKING', nickname: data.nickname, time: data.value });
           this.setState({ receivedMsgs });
           this.eventQueue.push({ timeUpdate: true, time: data.value, paused: data.paused });
           // currentVideo.currentTime = data.value;
           break;
         case 'BUFFER STARTED':
+          console.log('Received buffering start');
           receivedMsgs.unshift({ status: 'BUFFER', nickname: data.nickname });
           this.setState({ receivedMsgs });
           if (this.bufferCounter === 0) {
+            console.log('this will be state after buffer ends: ', currentVideo.paused ? 'paused' : 'play');
             this.wasPlayingBeforeBuffer = !currentVideo.paused;
             if (this.wasPlayingBeforeBuffer) this.eventQueue.push({ pause: true });
           }
           this.bufferCounter += 1;
           break;
         case 'BUFFER ENDED':
+          console.log('Received buffering end');
           this.bufferCounter -= 1;
           if (this.bufferCounter === 0 && this.wasPlayingBeforeBuffer) {
             this.eventQueue.push({ play: true, buffer: true });
@@ -205,7 +211,7 @@ class ChatBox extends React.Component {
         default:
           // do nothing
       }
-      if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager(this.eventQueue[0]);
+      if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager();
     });
   }
 
@@ -225,9 +231,14 @@ class ChatBox extends React.Component {
   }
 
   pauseVideo(target) {
+    let date = new Date();
+    console.log(date.toLocaleTimeString(), 'Pause event started');
     this.pause = false;
     target.pause();
+    date = new Date();
+    console.log(date.toLocaleTimeString(), 'Pause event ended');
     this.eventQueue.shift();
+    this.queueManager();
   }
 
   seekVideo(target, time, paused) {
@@ -236,28 +247,57 @@ class ChatBox extends React.Component {
       const fn = () => {
         tr.removeEventListener('seeked', fn);
         resolve();
-        console.log(this.eventQueue);
       };
       tr.addEventListener('seeked', fn);
       tr.currentTime = ti;
       if (state) tr.play().then(() => tr.pause());
     });
-    seek(target, time, paused).then(this.eventQueue.shift());
+    let date = new Date();
+    console.log(date.toLocaleTimeString(), 'Seek event started');
+    seek(target, time, paused).then(() => {
+      date = new Date();
+      console.log(date.toLocaleTimeString(), 'Seek event ended');
+      this.eventQueue.shift();
+      this.queueManager();
+    });
   }
 
   playVideo(target, buffer) {
+    const date = new Date();
+    console.log(date.toLocaleTimeString(), 'Play event started');
     if (!buffer) this.play = false;
-    target.play().then(this.eventQueue.shift());
+    target.play().then(() => {
+      this.eventQueue.shift();
+      const date = new Date();
+      console.log(date.toLocaleTimeString(), 'Play event ended');
+      this.queueManager();
+    }).catch(() => {
+      this.eventQueue.shift();
+      const date = new Date();
+      console.log(date.toLocaleTimeString(), 'Play event ended');
+      this.queueManager();
+    });
   }
 
-  queueManager(queue) {
-    this.queueManagerRunning = true;
-    const { currentVideo } = { ...this.state };
-    if (queue.pause) this.pauseVideo(currentVideo);
-    else if (queue.play) this.playVideo(currentVideo, queue.buffer);
-    else if (queue.timeUpdate) this.seekVideo(currentVideo, this.eventQueue[0].time, this.eventQueue[0].paused);
-    if (this.eventQueue[0]) this.queueManager(this.eventQueue[0]);
-    else this.queueManagerRunning = false;
+  queueManager() {
+    if (this.eventQueue[0]) {
+      const date = new Date();
+      console.log(date.toLocaleTimeString(), 'Queue manager running ', [...this.eventQueue]);
+      const event = this.eventQueue[0];
+      this.queueManagerRunning = true;
+      const { currentVideo } = { ...this.state };
+      if (event.pause) {
+        this.pauseVideo(currentVideo);
+      } else if (event.play) {
+        this.playVideo(currentVideo, event.buffer);
+      } else if (event.timeUpdate) {
+        this.seekVideo(currentVideo, this.eventQueue[0].time, this.eventQueue[0].paused);
+      }
+    } else {
+      const date = new Date();
+      console.log(date.toLocaleTimeString(), 'Queue manager finished ', [...this.eventQueue]);
+      this.queueManagerRunning = false;
+    }
   }
 
   handleVideoEvents(event) {
@@ -266,16 +306,27 @@ class ChatBox extends React.Component {
       case 'pause':
         if (this.bufferCounter === 0) {
           if (this.pause && currentVideo.readyState === 4) {
+            console.log('emitting pause');
             this.socket.emit('client sync', { type: 'PAUSE' });
-          } else this.pause = true;
+          } else {
+            console.log('Not emitting pause because: ', { bc: this.bufferCounter, pasuVar: this.pause, readyState: currentVideo.readyState });
+            this.pause = true;
+          }
+        } else {
+          console.log('Not emitting pause', this.bufferCounter);
         }
         break;
       case 'play':
         if (this.bufferCounter > 0) {
+          console.log('Not emitting play', this.bufferCounter);
           currentVideo.pause();
         } else if (this.play && currentVideo.readyState === 4) {
+          console.log('emitting play');
           this.socket.emit('client sync', { type: 'PLAY' });
-        } else this.play = true;
+        } else {
+          console.log('Not emitting play because: ', { bc: this.bufferCounter, playVar: this.play, readyState: currentVideo.readyState });
+          this.play = true;
+        }
         break;
       case 'seeked':
         if (this.seeking) {
@@ -286,6 +337,7 @@ class ChatBox extends React.Component {
         if (this.seeking !== true) {
           this.seeking = true;
           if (this.userSeeked) {
+            console.log('emitting seeking');
             this.socket.emit('client sync', { type: 'SEEKING', value: currentVideo.currentTime, paused: currentVideo.paused });
           }
           this.userSeeked = true;
