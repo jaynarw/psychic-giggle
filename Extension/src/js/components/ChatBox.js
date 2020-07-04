@@ -204,9 +204,9 @@ class ChatBox extends React.Component {
         case 'BUFFER ENDED':
           console.log('Received buffering end');
           this.bufferCounter -= 1;
-          if (this.bufferCounter === 0 && this.wasPlayingBeforeBuffer) {
-            this.eventQueue.push({ play: true, buffer: true });
-          }
+          // if (this.bufferCounter === 0 && this.wasPlayingBeforeBuffer) {
+          //   this.eventQueue.push({ play: true });
+          // }
           break;
         default:
           // do nothing
@@ -250,7 +250,15 @@ class ChatBox extends React.Component {
       };
       tr.addEventListener('seeked', fn);
       tr.currentTime = ti;
-      if (state) tr.play().then(() => tr.pause());
+      if (state) {
+        // this.eventQueue.push({ play: true }, { pause: true });
+        // if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager();
+        this.play = false;
+        tr.play().then(() => {
+          this.pause = false;
+          tr.pause();
+        });
+      }
     });
     let date = new Date();
     console.log(date.toLocaleTimeString(), 'Seek event started');
@@ -262,10 +270,10 @@ class ChatBox extends React.Component {
     });
   }
 
-  playVideo(target, buffer) {
+  playVideo(target) {
     const date = new Date();
     console.log(date.toLocaleTimeString(), 'Play event started');
-    if (!buffer) this.play = false;
+    this.play = false;
     target.play().then(() => {
       this.eventQueue.shift();
       const date = new Date();
@@ -289,7 +297,7 @@ class ChatBox extends React.Component {
       if (event.pause) {
         this.pauseVideo(currentVideo);
       } else if (event.play) {
-        this.playVideo(currentVideo, event.buffer);
+        this.playVideo(currentVideo);
       } else if (event.timeUpdate) {
         this.seekVideo(currentVideo, this.eventQueue[0].time, this.eventQueue[0].paused);
       }
@@ -304,29 +312,40 @@ class ChatBox extends React.Component {
     const { currentVideo } = { ...this.state };
     switch (event.type) {
       case 'pause':
-        if (this.bufferCounter === 0) {
-          if (this.pause && currentVideo.readyState === 4) {
+        if (this.pause) {
+          if (currentVideo.readyState === 4) {
             console.log('emitting pause');
             this.socket.emit('client sync', { type: 'PAUSE' });
-          } else {
-            console.log('Not emitting pause because: ', { bc: this.bufferCounter, pasuVar: this.pause, readyState: currentVideo.readyState });
-            this.pause = true;
           }
         } else {
-          console.log('Not emitting pause', this.bufferCounter);
+          console.log('Not emitting pause because: ', { bc: this.bufferCounter, pasuVar: this.pause, readyState: currentVideo.readyState });
+          this.pause = true;
         }
         break;
       case 'play':
-        if (this.bufferCounter > 0) {
-          console.log('Not emitting play', this.bufferCounter);
-          currentVideo.pause();
-        } else if (this.play && currentVideo.readyState === 4) {
-          console.log('emitting play');
-          this.socket.emit('client sync', { type: 'PLAY' });
+        if (this.play) {
+          if (this.bufferCounter > 0) {
+            console.log('Not emitting play', this.bufferCounter);
+            this.eventQueue.push({ pause: true });
+            if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager();
+          } else if (currentVideo.readyState === 4) {
+            console.log('emitting play');
+            this.socket.emit('client sync', { type: 'PLAY' });
+          }
         } else {
           console.log('Not emitting play because: ', { bc: this.bufferCounter, playVar: this.play, readyState: currentVideo.readyState });
           this.play = true;
         }
+        // if (this.bufferCounter > 0) {
+        //   console.log('Not emitting play', this.bufferCounter);
+        //   currentVideo.pause();
+        // } else if (this.play && currentVideo.readyState === 4) {
+        //   console.log('emitting play');
+        //   this.socket.emit('client sync', { type: 'PLAY' });
+        // } else {
+        //   console.log('Not emitting play because: ', { bc: this.bufferCounter, playVar: this.play, readyState: currentVideo.readyState });
+        //   this.play = true;
+        // }
         break;
       case 'seeked':
         if (this.seeking) {
@@ -341,7 +360,7 @@ class ChatBox extends React.Component {
             this.socket.emit('client sync', { type: 'SEEKING', value: currentVideo.currentTime, paused: currentVideo.paused });
           }
           this.userSeeked = true;
-        } else this.seeking = true;
+        }
         break;
       default:
         // do nothing
