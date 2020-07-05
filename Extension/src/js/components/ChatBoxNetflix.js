@@ -42,6 +42,7 @@ class ChatBox extends React.Component {
       liveCalls: {},
       onlineUsers: [],
       typingUsers: [],
+      notifications: 0,
     };
     this.socket = io('https://binge-box.herokuapp.com');
     this.gf = new GiphyFetch('lwiMnpcorQHdFIivZg43l3BJfJRlzdYO');
@@ -107,7 +108,7 @@ class ChatBox extends React.Component {
     });
 
     this.socket.on('gif-msg-recieved', (gifMessage) => {
-      const { receivedMsgs } = { ...this.state };
+      const { receivedMsgs, notifications, isVisible } = { ...this.state };
       this.gf.gif(gifMessage.gifId).then((fetchedGif) => {
         const { data } = fetchedGif;
         receivedMsgs.unshift({
@@ -116,13 +117,19 @@ class ChatBox extends React.Component {
           nickname: gifMessage.nickname,
         });
         this.setState({ receivedMsgs });
+        if (!isVisible) {
+          this.setState({ notifications: notifications + 1 });
+        }
       });
     });
 
     this.socket.on('msg-recieved', (data) => {
-      const { receivedMsgs } = { ...this.state };
+      const { receivedMsgs, notifications, isVisible } = { ...this.state };
       receivedMsgs.unshift(data);
       this.setState({ receivedMsgs });
+      if (!isVisible) {
+        this.setState({ notifications: notifications + 1 });
+      }
     });
     this.socket.on('joined', (data) => {
       const { receivedMsgs } = { ...this.state };
@@ -349,6 +356,7 @@ class ChatBox extends React.Component {
       videoPlayerContainer.style.setProperty('width', '80%', 'important');
       document.getElementById('psychic-giggler').style.width = '20%';
       setTimeout(() => { this.setState({ isVisible: true }); }, 200);
+      this.setState({ notifications: 0 });
     }
   }
 
@@ -369,7 +377,9 @@ class ChatBox extends React.Component {
       liveCalls,
       onlineUsers,
       typingUsers,
+      notifications,
     } = { ...this.state };
+    const popcornBg = chrome.runtime.getURL('img/popkaun-bg.png');
     return (
       <>
         {/* <ReactTooltip place="left" type="light" /> */}
@@ -377,12 +387,16 @@ class ChatBox extends React.Component {
         && (
           <>
             <div
-              className="show-hide-button"
+              className={`show-hide-button ${notifications > 0 ? 'background-popcorn white-text' : ''}`}
               data-tip="Show chat"
               onClick={() => this.showHide()}
-              style={{ top: `${document.getElementById('collapse-chat').getBoundingClientRect().y}px` }}
+              style={{
+                top: `${document.getElementById('collapse-chat').getBoundingClientRect().y}px`,
+                backgroundImage: notifications > 0 ? `url('${popcornBg}')` : '',
+              }}
             >
-              <MdFirstPage style={{ width: '100%', height: '100%' }} />
+              {notifications === 0 && <MdFirstPage style={{ width: '100%', height: '100%' }} />}
+              {notifications > 0 && (notifications >= 10 ? '9+' : `${notifications}`) }
             </div>
             <ReactTooltip place="left" type="light" />
           </>

@@ -35,6 +35,7 @@ class ChatBox extends React.Component {
       liveCalls: {},
       onlineUsers: [],
       typingUsers: [],
+      notifications: 0,
     };
     this.socket = io('https://binge-box.herokuapp.com');
     this.gf = new GiphyFetch('lwiMnpcorQHdFIivZg43l3BJfJRlzdYO');
@@ -70,8 +71,13 @@ class ChatBox extends React.Component {
 
     this.bufferObserver = new MutationObserver(((mutations) => {
       mutations.forEach((mutationRecord) => {
-        if (mutationRecord.target.style.display === 'none') this.socket.emit('client sync', { type: 'BUFFER ENDED' });
-        else this.socket.emit('client sync', { type: 'BUFFER STARTED' });
+        if (mutationRecord.target.style.display === 'none') {
+          this.socket.emit('client sync', { type: 'BUFFER ENDED' });
+          console.log('Emiiting Buffer eneded');
+        } else {
+          this.socket.emit('client sync', { type: 'BUFFER STARTED' });
+          console.log('Emiiting Buffer started');
+        }
       });
     }));
     this.bufferObserver.observe(buffer, { attributes: true, attributeFilter: ['style'] });
@@ -90,7 +96,7 @@ class ChatBox extends React.Component {
     });
 
     this.socket.on('gif-msg-recieved', (gifMessage) => {
-      const { receivedMsgs } = { ...this.state };
+      const { receivedMsgs, notifications, isVisible } = { ...this.state };
       this.gf.gif(gifMessage.gifId).then((fetchedGif) => {
         const { data } = fetchedGif;
         receivedMsgs.unshift({
@@ -99,13 +105,19 @@ class ChatBox extends React.Component {
           nickname: gifMessage.nickname,
         });
         this.setState({ receivedMsgs });
+        if (!isVisible) {
+          this.setState({ notifications: notifications + 1 });
+        }
       });
     });
 
     this.socket.on('msg-recieved', (data) => {
-      const { receivedMsgs } = { ...this.state };
+      const { receivedMsgs, notifications, isVisible } = { ...this.state };
       receivedMsgs.unshift(data);
       this.setState({ receivedMsgs });
+      if (!isVisible) {
+        this.setState({ notifications: notifications + 1 });
+      }
     });
     this.socket.on('joined', (data) => {
       const { receivedMsgs } = { ...this.state };
@@ -318,14 +330,14 @@ class ChatBox extends React.Component {
             this.socket.emit('client sync', { type: 'PAUSE' });
           }
         } else {
-          console.log('Not emitting pause because: ', { bc: this.bufferCounter, pasuVar: this.pause, readyState: currentVideo.readyState });
+          console.log('Not emitting pause because: Code did pause');
           this.pause = true;
         }
         break;
       case 'play':
         if (this.play) {
           if (this.bufferCounter > 0) {
-            console.log('Not emitting play', this.bufferCounter);
+            console.log('Not emitting play because: Others are buffering');
             this.eventQueue.push({ pause: true });
             if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager();
           } else if (currentVideo.readyState === 4) {
@@ -333,7 +345,7 @@ class ChatBox extends React.Component {
             this.socket.emit('client sync', { type: 'PLAY' });
           }
         } else {
-          console.log('Not emitting play because: ', { bc: this.bufferCounter, playVar: this.play, readyState: currentVideo.readyState });
+          console.log('Not emitting play because: Code did play');
           this.play = true;
         }
         // if (this.bufferCounter > 0) {
@@ -358,6 +370,8 @@ class ChatBox extends React.Component {
           if (this.userSeeked) {
             console.log('emitting seeking');
             this.socket.emit('client sync', { type: 'SEEKING', value: currentVideo.currentTime, paused: currentVideo.paused });
+          } else {
+            console.log('Not emitting seeked because: Code seeked');
           }
           this.userSeeked = true;
         }
@@ -414,6 +428,7 @@ class ChatBox extends React.Component {
       });
       document.getElementById('psychic-giggler').style.width = '20%';
       setTimeout(() => { this.setState({ isVisible: true }); }, 200);
+      this.setState({ notifications: 0 });
     }
   }
 
@@ -434,7 +449,9 @@ class ChatBox extends React.Component {
       liveCalls,
       onlineUsers,
       typingUsers,
+      notifications,
     } = { ...this.state };
+    const popcornBg = chrome.runtime.getURL('img/popkaun-bg.png');
     return (
       <>
         {/* <ReactTooltip place="left" type="light" /> */}
@@ -442,12 +459,16 @@ class ChatBox extends React.Component {
         && (
           <>
             <div
-              className="show-hide-button"
+              className={`show-hide-button ${notifications > 0 ? 'background-popcorn white-text' : ''}`}
               data-tip="Show chat"
               onClick={() => this.showHide()}
-              style={{ top: `${document.getElementById('collapse-chat').getBoundingClientRect().y}px` }}
+              style={{
+                top: `${document.getElementById('collapse-chat').getBoundingClientRect().y}px`,
+                backgroundImage: notifications > 0 ? `url('${popcornBg}')` : '',
+              }}
             >
-              <MdFirstPage style={{ width: '100%', height: '100%' }} />
+              {notifications === 0 && <MdFirstPage style={{ width: '100%', height: '100%' }} />}
+              {notifications > 0 && (notifications >= 10 ? '9+' : `${notifications}`) }
             </div>
             <ReactTooltip place="left" type="light" />
           </>
@@ -500,7 +521,9 @@ class ChatBox extends React.Component {
           <>
             <div className="card-psychic session-header">
               <div style={{ display: 'flex' }}>
-                <div id="collapse-chat" className="collapse-btn" onClick={() => this.showHide()}><MdLastPage style={{ width: '100%', height: '100%' }} /></div>
+                <div id="collapse-chat" className="collapse-btn" onClick={() => this.showHide()}>
+                  <MdLastPage style={{ width: '100%', height: '100%' }} />
+                </div>
                 <CopyToClipboard text={currentSession}>
                   <div className="username-input" id="copy-session">
                     Share your session ID -
