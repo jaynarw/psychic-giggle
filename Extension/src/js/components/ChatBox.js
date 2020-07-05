@@ -72,7 +72,8 @@ class ChatBox extends React.Component {
     this.bufferObserver = new MutationObserver(((mutations) => {
       mutations.forEach((mutationRecord) => {
         if (mutationRecord.target.style.display === 'none') {
-          this.socket.emit('client sync', { type: 'BUFFER ENDED' });
+          const { currentVideo } = { ...this.state };
+          this.socket.emit('client sync', { type: 'BUFFER ENDED', paused: currentVideo.paused });
           console.log('Emiiting Buffer eneded');
         } else {
           this.socket.emit('client sync', { type: 'BUFFER STARTED' });
@@ -199,7 +200,7 @@ class ChatBox extends React.Component {
           console.log('Received seeking');
           receivedMsgs.unshift({ status: 'SEEKING', nickname: data.nickname, time: data.value });
           this.setState({ receivedMsgs });
-          this.eventQueue.push({ timeUpdate: true, time: data.value, paused: data.paused });
+          this.eventQueue.push({ timeUpdate: true, time: data.value });
           // currentVideo.currentTime = data.value;
           break;
         case 'BUFFER STARTED':
@@ -207,9 +208,12 @@ class ChatBox extends React.Component {
           receivedMsgs.unshift({ status: 'BUFFER', nickname: data.nickname });
           this.setState({ receivedMsgs });
           if (this.bufferCounter === 0) {
-            console.log('this will be state after buffer ends: ', currentVideo.paused ? 'paused' : 'play');
-            this.wasPlayingBeforeBuffer = !currentVideo.paused;
-            if (this.wasPlayingBeforeBuffer) this.eventQueue.push({ pause: true });
+            // console.log('this will be state after buffer ends: ', currentVideo.paused ? 'paused' : 'play');
+            // this.wasPlayingBeforeBuffer = !currentVideo.paused;
+            // if (this.wasPlayingBeforeBuffer) {
+            console.log('Others were buffering, we were playing, paused video insrted');
+            this.eventQueue.push({ pause: true });
+            // }
           }
           this.bufferCounter += 1;
           break;
@@ -253,7 +257,7 @@ class ChatBox extends React.Component {
     this.queueManager();
   }
 
-  seekVideo(target, time, paused) {
+  seekVideo(target, time) {
     this.userSeeked = false;
     const seek = (tr, ti, state) => new Promise((resolve) => {
       const fn = () => {
@@ -263,18 +267,25 @@ class ChatBox extends React.Component {
       tr.addEventListener('seeked', fn);
       tr.currentTime = ti;
       if (state) {
+        console.log('Video was paused before seeking');
         // this.eventQueue.push({ play: true }, { pause: true });
         // if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager();
         this.play = false;
+        console.log('In seekVideo, this.play:', this.play);
         tr.play().then(() => {
           this.pause = false;
           tr.pause();
+        }).catch(() => {
+          this.pause = false;
+          tr.pause();
         });
+      } else {
+        console.log('Video was playing before seeking');
       }
     });
     let date = new Date();
     console.log(date.toLocaleTimeString(), 'Seek event started');
-    seek(target, time, paused).then(() => {
+    seek(target, time, target.paused).then(() => {
       date = new Date();
       console.log(date.toLocaleTimeString(), 'Seek event ended');
       this.eventQueue.shift();
@@ -286,6 +297,7 @@ class ChatBox extends React.Component {
     const date = new Date();
     console.log(date.toLocaleTimeString(), 'Play event started');
     this.play = false;
+    console.log('In playVideo, this.play:', this.play);
     target.play().then(() => {
       this.eventQueue.shift();
       const date = new Date();
@@ -347,6 +359,7 @@ class ChatBox extends React.Component {
         } else {
           console.log('Not emitting play because: Code did play');
           this.play = true;
+          console.log('In handleVideoEvents, this.play:', this.play);
         }
         // if (this.bufferCounter > 0) {
         //   console.log('Not emitting play', this.bufferCounter);
@@ -365,11 +378,11 @@ class ChatBox extends React.Component {
         }
         break;
       case 'seeking':
-        if (this.seeking !== true) {
-          this.seeking = true;
+        if (this.seeking !== currentVideo.currentTime) {
+          this.seeking = currentVideo.currentTime;
           if (this.userSeeked) {
             console.log('emitting seeking');
-            this.socket.emit('client sync', { type: 'SEEKING', value: currentVideo.currentTime, paused: currentVideo.paused });
+            this.socket.emit('client sync', { type: 'SEEKING', value: currentVideo.currentTime });
           } else {
             console.log('Not emitting seeked because: Code seeked');
           }
