@@ -157,7 +157,7 @@ class ChatBox extends React.Component {
           }
         }
       }
-      if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager(this.eventQueue[0]);
+      if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager();
     });
 
     this.socket.on('typing', (nickname) => {
@@ -170,7 +170,7 @@ class ChatBox extends React.Component {
         const id = setTimeout(() => {
           const { typingUsers } = { ...this.state };
           this.setState({ typingUsers: typingUsers.filter((user) => user !== nickname) });
-        }, 3000);
+        }, 1000);
         this.typingTimeout[nickname] = id;
       } else {
         if (this.typingTimeout[nickname]) {
@@ -180,7 +180,7 @@ class ChatBox extends React.Component {
         const id = setTimeout(() => {
           const { typingUsers } = { ...this.state };
           this.setState({ typingUsers: typingUsers.filter((user) => user !== nickname) });
-        }, 3000);
+        }, 1000);
         this.typingTimeout[nickname] = id;
       }
     });
@@ -207,21 +207,17 @@ class ChatBox extends React.Component {
           receivedMsgs.unshift({ status: 'BUFFER', nickname: data.nickname });
           this.setState({ receivedMsgs });
           if (this.bufferCounter === 0) {
-            this.wasPlayingBeforeBuffer = !this.video.paused;
-            if (this.wasPlayingBeforeBuffer) this.eventQueue.push({ pause: true });
+            this.eventQueue.push({ pause: true });
           }
           this.bufferCounter += 1;
           break;
         case 'BUFFER ENDED':
           this.bufferCounter -= 1;
-          if (this.bufferCounter === 0 && this.wasPlayingBeforeBuffer) {
-            this.eventQueue.push({ play: true, buffer: true });
-          }
           break;
         default:
           // do nothing
       }
-      if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager(this.eventQueue[0]);
+      if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager();
     });
   }
 
@@ -243,9 +239,10 @@ class ChatBox extends React.Component {
     this.pause = false;
     target.pause();
     this.eventQueue.shift();
+    this.queueManager();
   }
 
-  seekVideo(target, time, paused) {
+  seekVideo(target, time) {
     this.userSeeked = false;
     const seek = (tr, ti, state) => new Promise((resolve) => {
       const fn = () => {
@@ -255,23 +252,48 @@ class ChatBox extends React.Component {
       tr.addEventListener('seeked', fn);
       // tr.currentTime = ti;
       window.postMessage({ type: 'seek', time: ti }, '*');
-      if (state) tr.play().then(() => tr.pause());
+      if (state) {
+        this.play = false;
+        tr.play().then(() => {
+          this.pause = false;
+          tr.pause();
+        }).catch(() => {
+          this.pause = false;
+          tr.pause();
+        });
+      }
     });
-    seek(target, time, paused).then(this.eventQueue.shift());
+    seek(target, time, target.paused).then(() => {
+      this.eventQueue.shift();
+      this.queueManager();
+    });
   }
 
-  playVideo(target, buffer) {
-    if (!buffer) this.play = false;
-    target.play().then(this.eventQueue.shift());
+  playVideo(target) {
+    this.play = false;
+    target.play().then(() => {
+      this.eventQueue.shift();
+      this.queueManager();
+    }).catch(() => {
+      this.eventQueue.shift();
+      this.queueManager();
+    });
   }
 
-  queueManager(queue) {
-    this.queueManagerRunning = true;
-    if (queue.pause) this.pauseVideo(this.video);
-    else if (queue.play) this.playVideo(this.video, queue.buffer);
-    else if (queue.timeUpdate) this.seekVideo(this.video, this.eventQueue[0].time, this.eventQueue[0].paused);
-    if (this.eventQueue[0]) this.queueManager(this.eventQueue[0]);
-    else this.queueManagerRunning = false;
+  queueManager() {
+    if (this.eventQueue[0]) {
+      const event = this.eventQueue[0];
+      this.queueManagerRunning = true;
+      if (event.pause) {
+        this.pauseVideo(this.video);
+      } else if (event.play) {
+        this.playVideo(this.video);
+      } else if (event.timeUpdate) {
+        this.seekVideo(this.video, event.time);
+      }
+    } else {
+      this.queueManagerRunning = false;
+    }
   }
 
   seek(time) {
@@ -281,18 +303,25 @@ class ChatBox extends React.Component {
   handleVideoEvents(event) {
     switch (event.type) {
       case 'pause':
-        if (this.bufferCounter === 0) {
-          if (this.pause && this.video.readyState === 4) {
+        if (this.pause) {
+          if (this.video.readyState === 4) {
             this.socket.emit('client sync', { type: 'PAUSE' });
-          } else this.pause = true;
+          }
+        } else {
+          this.pause = true;
         }
         break;
       case 'play':
-        if (this.bufferCounter > 0) {
-          this.video.pause();
-        } else if (this.play && this.video.readyState === 4) {
-          this.socket.emit('client sync', { type: 'PLAY' });
-        } else this.play = true;
+        if (this.play) {
+          if (this.bufferCounter > 0) {
+            this.eventQueue.push({ pause: true });
+            if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager();
+          } else if (this.video.readyState === 4) {
+            this.socket.emit('client sync', { type: 'PLAY' });
+          }
+        } else {
+          this.play = true;
+        }
         break;
       case 'seeked':
         if (this.seeking) {
@@ -300,13 +329,13 @@ class ChatBox extends React.Component {
         }
         break;
       case 'seeking':
-        if (this.seeking !== true) {
-          this.seeking = true;
+        if (this.seeking !== (this.video.currentTime * 1000)) {
+          this.seeking = (this.video.currentTime * 1000);
           if (this.userSeeked) {
-            this.socket.emit('client sync', { type: 'SEEKING', value: this.video.currentTime * 1000 });
+            this.socket.emit('client sync', { type: 'SEEKING', value: (this.video.currentTime * 1000) });
           }
           this.userSeeked = true;
-        } else this.seeking = true;
+        }
         break;
       default:
         // do nothing
