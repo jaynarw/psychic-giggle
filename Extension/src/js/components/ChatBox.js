@@ -37,7 +37,7 @@ class ChatBox extends React.Component {
       typingUsers: [],
       notifications: 0,
     };
-    this.socket = io('http://localhost');
+    this.socket = io('https://binge-box.herokuapp.com');
     this.gf = new GiphyFetch('lwiMnpcorQHdFIivZg43l3BJfJRlzdYO');
     this.play = true;
     this.pause = true;
