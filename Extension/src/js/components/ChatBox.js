@@ -37,7 +37,7 @@ class ChatBox extends React.Component {
       typingUsers: [],
       notifications: 0,
     };
-    this.socket = io('https://binge-box.herokuapp.com');
+    this.socket = io('http://localhost');
     this.gf = new GiphyFetch('lwiMnpcorQHdFIivZg43l3BJfJRlzdYO');
     this.play = true;
     this.pause = true;
@@ -107,7 +107,7 @@ class ChatBox extends React.Component {
       this.gf.gif(gifMessage.gifId).then((fetchedGif) => {
         const { data } = fetchedGif;
         receivedMsgs.unshift({
-          from: gifMessage.from,
+          fromMe: gifMessage.fromMe,
           gifData: data,
           nickname: gifMessage.nickname,
         });
@@ -138,7 +138,7 @@ class ChatBox extends React.Component {
     });
     this.socket.on('send time', () => {
       const { currentVideo } = { ...this.state };
-      if (currentVideo) this.socket.emit('rec time', { time: currentVideo.currentTime, paused: currentVideo.paused });
+      if (currentVideo) this.socket.emit('rec time', { time: (currentVideo.currentTime - currentVideo.duration), paused: currentVideo.paused });
     });
     this.socket.on('set time', (state) => {
       const { currentVideo } = { ...this.state };
@@ -155,7 +155,7 @@ class ChatBox extends React.Component {
             this.performSync = false;
           }
         }
-        this.eventQueue.push({ timeUpdate: true, time: state.time });
+        this.eventQueue.push({ timeUpdate: true, time: (state.time + currentVideo.duration) });
       }
       if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager();
     });
@@ -201,9 +201,9 @@ class ChatBox extends React.Component {
           // currentVideo.play();
           break;
         case 'SEEKING':
-          receivedMsgs.unshift({ status: 'SEEKING', nickname: data.nickname, time: data.value });
+          receivedMsgs.unshift({ status: 'SEEKING', nickname: data.nickname, time: (data.value + currentVideo.duration) });
           this.setState({ receivedMsgs });
-          this.eventQueue.push({ timeUpdate: true, time: data.value });
+          this.eventQueue.push({ timeUpdate: true, time: (data.value + currentVideo.duration) });
           // currentVideo.currentTime = data.value;
           break;
         case 'BUFFER STARTED':
@@ -333,7 +333,7 @@ class ChatBox extends React.Component {
         if (this.seeking !== currentVideo.currentTime) {
           this.seeking = currentVideo.currentTime;
           if (this.userSeeked) {
-            this.socket.emit('client sync', { type: 'SEEKING', value: currentVideo.currentTime });
+            this.socket.emit('client sync', { type: 'SEEKING', value: (currentVideo.currentTime - currentVideo.duration) });
           }
           this.userSeeked = true;
         }
