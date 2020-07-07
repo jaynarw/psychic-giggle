@@ -35,6 +35,7 @@ class ChatBox extends React.Component {
       liveCalls: {},
       onlineUsers: [],
       typingUsers: [],
+      notifications: 0,
     };
     this.socket = io('https://binge-box.herokuapp.com');
     this.gf = new GiphyFetch('lwiMnpcorQHdFIivZg43l3BJfJRlzdYO');
@@ -70,8 +71,12 @@ class ChatBox extends React.Component {
 
     this.bufferObserver = new MutationObserver(((mutations) => {
       mutations.forEach((mutationRecord) => {
-        if (mutationRecord.target.style.display === 'none') this.socket.emit('client sync', { type: 'BUFFER ENDED' });
-        else this.socket.emit('client sync', { type: 'BUFFER STARTED' });
+        if (mutationRecord.target.style.display === 'none') {
+          const { currentVideo } = { ...this.state };
+          this.socket.emit('client sync', { type: 'BUFFER ENDED', paused: currentVideo.paused });
+        } else {
+          this.socket.emit('client sync', { type: 'BUFFER STARTED' });
+        }
       });
     }));
     this.bufferObserver.observe(buffer, { attributes: true, attributeFilter: ['style'] });
@@ -82,15 +87,23 @@ class ChatBox extends React.Component {
 
     this.socket.on('get-session', () => {
       const {
-        currentSession, joinSessionInput, nicknameInput, nowPlaying,
+        currentSession, nicknameInput, nowPlaying,
       } = { ...this.state };
-      if (currentSession && currentSession === joinSessionInput && nicknameInput && nowPlaying) {
-        this.joinSessionHandler();
+      console.log(currentSession);
+      if (currentSession && nicknameInput && nowPlaying) {
+        console.log('Rejoining', currentSession);
+        this.socket.emit('join session', currentSession, nicknameInput, nowPlaying, (data) => {
+          if (data.success) {
+            this.socket.emit('sync time');
+            this.setState({ currentSession, errorMsgJoin: false, errorMsg: false });
+          } else if (data.error1) this.setState({ errorMsgJoin: data.error1 });
+          else if (data.error2) this.displayError(data.error2);
+        });
       }
     });
 
     this.socket.on('gif-msg-recieved', (gifMessage) => {
-      const { receivedMsgs } = { ...this.state };
+      const { receivedMsgs, notifications, isVisible } = { ...this.state };
       this.gf.gif(gifMessage.gifId).then((fetchedGif) => {
         const { data } = fetchedGif;
         receivedMsgs.unshift({
@@ -99,13 +112,19 @@ class ChatBox extends React.Component {
           nickname: gifMessage.nickname,
         });
         this.setState({ receivedMsgs });
+        if (!isVisible) {
+          this.setState({ notifications: notifications + 1 });
+        }
       });
     });
 
     this.socket.on('msg-recieved', (data) => {
-      const { receivedMsgs } = { ...this.state };
+      const { receivedMsgs, notifications, isVisible } = { ...this.state };
       receivedMsgs.unshift(data);
       this.setState({ receivedMsgs });
+      if (!isVisible) {
+        this.setState({ notifications: notifications + 1 });
+      }
     });
     this.socket.on('joined', (data) => {
       const { receivedMsgs } = { ...this.state };
@@ -125,7 +144,6 @@ class ChatBox extends React.Component {
       const { currentVideo } = { ...this.state };
       if (currentVideo) {
         // currentVideo.currentTime = state.time;
-        this.eventQueue.push({ timeUpdate: true, time: state.time });
         if (state.paused !== currentVideo.paused) {
           if (state.paused) {
             this.eventQueue.push({ pause: true });
@@ -137,8 +155,9 @@ class ChatBox extends React.Component {
             this.performSync = false;
           }
         }
+        this.eventQueue.push({ timeUpdate: true, time: state.time });
       }
-      if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager(this.eventQueue[0]);
+      if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager();
     });
 
     this.socket.on('typing', (nickname) => {
@@ -151,7 +170,7 @@ class ChatBox extends React.Component {
         const id = setTimeout(() => {
           const { typingUsers } = { ...this.state };
           this.setState({ typingUsers: typingUsers.filter((user) => user !== nickname) });
-        }, 3000);
+        }, 1000);
         this.typingTimeout[nickname] = id;
       } else {
         if (this.typingTimeout[nickname]) {
@@ -161,7 +180,7 @@ class ChatBox extends React.Component {
         const id = setTimeout(() => {
           const { typingUsers } = { ...this.state };
           this.setState({ typingUsers: typingUsers.filter((user) => user !== nickname) });
-        }, 3000);
+        }, 1000);
         this.typingTimeout[nickname] = id;
       }
     });
@@ -184,28 +203,24 @@ class ChatBox extends React.Component {
         case 'SEEKING':
           receivedMsgs.unshift({ status: 'SEEKING', nickname: data.nickname, time: data.value });
           this.setState({ receivedMsgs });
-          this.eventQueue.push({ timeUpdate: true, time: data.value, paused: data.paused });
+          this.eventQueue.push({ timeUpdate: true, time: data.value });
           // currentVideo.currentTime = data.value;
           break;
         case 'BUFFER STARTED':
           receivedMsgs.unshift({ status: 'BUFFER', nickname: data.nickname });
           this.setState({ receivedMsgs });
           if (this.bufferCounter === 0) {
-            this.wasPlayingBeforeBuffer = !currentVideo.paused;
-            if (this.wasPlayingBeforeBuffer) this.eventQueue.push({ pause: true });
+            this.eventQueue.push({ pause: true });
           }
           this.bufferCounter += 1;
           break;
         case 'BUFFER ENDED':
           this.bufferCounter -= 1;
-          if (this.bufferCounter === 0 && this.wasPlayingBeforeBuffer) {
-            this.eventQueue.push({ play: true, buffer: true });
-          }
           break;
         default:
           // do nothing
       }
-      if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager(this.eventQueue[0]);
+      if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager();
     });
   }
 
@@ -228,54 +243,86 @@ class ChatBox extends React.Component {
     this.pause = false;
     target.pause();
     this.eventQueue.shift();
+    this.queueManager();
   }
 
-  seekVideo(target, time, paused) {
+  seekVideo(target, time) {
     this.userSeeked = false;
     const seek = (tr, ti, state) => new Promise((resolve) => {
       const fn = () => {
         tr.removeEventListener('seeked', fn);
         resolve();
-        console.log(this.eventQueue);
       };
       tr.addEventListener('seeked', fn);
       tr.currentTime = ti;
-      if (state) tr.play().then(() => tr.pause());
+      if (state) {
+        this.play = false;
+        tr.play().then(() => {
+          this.pause = false;
+          tr.pause();
+        }).catch(() => {
+          this.pause = false;
+          tr.pause();
+        });
+      }
     });
-    seek(target, time, paused).then(this.eventQueue.shift());
+    seek(target, time, target.paused).then(() => {
+      this.eventQueue.shift();
+      this.queueManager();
+    });
   }
 
-  playVideo(target, buffer) {
-    if (!buffer) this.play = false;
-    target.play().then(this.eventQueue.shift());
+  playVideo(target) {
+    this.play = false;
+    target.play().then(() => {
+      this.eventQueue.shift();
+      this.queueManager();
+    }).catch(() => {
+      this.eventQueue.shift();
+      this.queueManager();
+    });
   }
 
-  queueManager(queue) {
-    this.queueManagerRunning = true;
-    const { currentVideo } = { ...this.state };
-    if (queue.pause) this.pauseVideo(currentVideo);
-    else if (queue.play) this.playVideo(currentVideo, queue.buffer);
-    else if (queue.timeUpdate) this.seekVideo(currentVideo, this.eventQueue[0].time, this.eventQueue[0].paused);
-    if (this.eventQueue[0]) this.queueManager(this.eventQueue[0]);
-    else this.queueManagerRunning = false;
+  queueManager() {
+    if (this.eventQueue[0]) {
+      const event = this.eventQueue[0];
+      this.queueManagerRunning = true;
+      const { currentVideo } = { ...this.state };
+      if (event.pause) {
+        this.pauseVideo(currentVideo);
+      } else if (event.play) {
+        this.playVideo(currentVideo);
+      } else if (event.timeUpdate) {
+        this.seekVideo(currentVideo, this.eventQueue[0].time);
+      }
+    } else {
+      this.queueManagerRunning = false;
+    }
   }
 
   handleVideoEvents(event) {
     const { currentVideo } = { ...this.state };
     switch (event.type) {
       case 'pause':
-        if (this.bufferCounter === 0) {
-          if (this.pause && currentVideo.readyState === 4) {
+        if (this.pause) {
+          if (currentVideo.readyState === 4) {
             this.socket.emit('client sync', { type: 'PAUSE' });
-          } else this.pause = true;
+          }
+        } else {
+          this.pause = true;
         }
         break;
       case 'play':
-        if (this.bufferCounter > 0) {
-          currentVideo.pause();
-        } else if (this.play && currentVideo.readyState === 4) {
-          this.socket.emit('client sync', { type: 'PLAY' });
-        } else this.play = true;
+        if (this.play) {
+          if (this.bufferCounter > 0) {
+            this.eventQueue.push({ pause: true });
+            if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager();
+          } else if (currentVideo.readyState === 4) {
+            this.socket.emit('client sync', { type: 'PLAY' });
+          }
+        } else {
+          this.play = true;
+        }
         break;
       case 'seeked':
         if (this.seeking) {
@@ -283,13 +330,13 @@ class ChatBox extends React.Component {
         }
         break;
       case 'seeking':
-        if (this.seeking !== true) {
-          this.seeking = true;
+        if (this.seeking !== currentVideo.currentTime) {
+          this.seeking = currentVideo.currentTime;
           if (this.userSeeked) {
-            this.socket.emit('client sync', { type: 'SEEKING', value: currentVideo.currentTime, paused: currentVideo.paused });
+            this.socket.emit('client sync', { type: 'SEEKING', value: currentVideo.currentTime });
           }
           this.userSeeked = true;
-        } else this.seeking = true;
+        }
         break;
       default:
         // do nothing
@@ -343,6 +390,7 @@ class ChatBox extends React.Component {
       });
       document.getElementById('psychic-giggler').style.width = '20%';
       setTimeout(() => { this.setState({ isVisible: true }); }, 200);
+      this.setState({ notifications: 0 });
     }
   }
 
@@ -363,7 +411,9 @@ class ChatBox extends React.Component {
       liveCalls,
       onlineUsers,
       typingUsers,
+      notifications,
     } = { ...this.state };
+    const popcornBg = chrome.runtime.getURL('img/popkaun-bg.png');
     return (
       <>
         {/* <ReactTooltip place="left" type="light" /> */}
@@ -371,12 +421,16 @@ class ChatBox extends React.Component {
         && (
           <>
             <div
-              className="show-hide-button"
+              className={`show-hide-button ${notifications > 0 ? 'background-popcorn white-text' : ''}`}
               data-tip="Show chat"
               onClick={() => this.showHide()}
-              style={{ top: `${document.getElementById('collapse-chat').getBoundingClientRect().y}px` }}
+              style={{
+                top: `${document.getElementById('collapse-chat').getBoundingClientRect().y}px`,
+                backgroundImage: notifications > 0 ? `url('${popcornBg}')` : '',
+              }}
             >
-              <MdFirstPage style={{ width: '100%', height: '100%' }} />
+              {notifications === 0 && <MdFirstPage style={{ width: '100%', height: '100%' }} />}
+              {notifications > 0 && (notifications >= 10 ? '9+' : `${notifications}`) }
             </div>
             <ReactTooltip place="left" type="light" />
           </>
@@ -429,7 +483,9 @@ class ChatBox extends React.Component {
           <>
             <div className="card-psychic session-header">
               <div style={{ display: 'flex' }}>
-                <div id="collapse-chat" className="collapse-btn" onClick={() => this.showHide()}><MdLastPage style={{ width: '100%', height: '100%' }} /></div>
+                <div id="collapse-chat" className="collapse-btn" onClick={() => this.showHide()}>
+                  <MdLastPage style={{ width: '100%', height: '100%' }} />
+                </div>
                 <CopyToClipboard text={currentSession}>
                   <div className="username-input" id="copy-session">
                     Share your session ID -

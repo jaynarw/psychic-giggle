@@ -7,9 +7,10 @@ chatBoxContainer.id = 'psychic-giggler';
 chatBoxContainer.style.zIndex = '9';
 chatBoxContainer.style.top = '0';
 
+const url = new URL(window.location.href);
+const prefix = url.pathname.split('/')[1];
 const videoPlayerContainer = document.querySelector('.NFPlayer.nf-player-container');
-if (videoPlayerContainer) {
-  console.log('HI');
+if (prefix === 'watch' && videoPlayerContainer) {
   videoPlayerContainer.style.setProperty('width', '80%', 'important');
 }
 
@@ -18,14 +19,16 @@ function check() {
   const prefix = url.pathname.split('/')[1];
   if (prefix === 'watch') {
     const videoPlayerContainer = document.querySelector('.NFPlayer.nf-player-container');
-    const nowPlayingElt = videoPlayerContainer.querySelector('.video-title').textContent;
-    console.log(nowPlayingElt);
+    const nowPlayingElt = videoPlayerContainer.querySelector('.video-title');
     const sizingWrapper = document.querySelector('.sizing-wrapper');
-    if (videoPlayerContainer && nowPlayingElt.length > 0 && document.getElementsByTagName('video').length === 1 && !sizingWrapper.contains(chatBoxContainer)) {
+    if (videoPlayerContainer
+      && nowPlayingElt
+      && nowPlayingElt.textContent.length > 0
+      && document.getElementsByTagName('video').length === 1
+      && !sizingWrapper.contains(chatBoxContainer)) {
       videoPlayerContainer.style.setProperty('width', '80%', 'important');
       sizingWrapper.appendChild(chatBoxContainer);
-      console.log(nowPlayingElt);
-      ReactDOM.render(<ChatBox nowPlaying={nowPlayingElt} />, chatBoxContainer);
+      ReactDOM.render(<ChatBox nowPlaying={nowPlayingElt.textContent} />, chatBoxContainer);
     }
   } else {
     ReactDOM.unmountComponentAtNode(chatBoxContainer);
