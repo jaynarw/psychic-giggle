@@ -60,7 +60,7 @@ class RTCPeer {
             });
         });
     } catch (err) {
-      this.log('*** The following error occurred while handling the negotiationneeded event:');
+      this.log('*** The following error occurred while handling the negotiation needed event:');
       this.reportError(err);
     }
   }

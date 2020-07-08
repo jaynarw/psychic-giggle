@@ -3,7 +3,8 @@ import React from 'react';
 import * as io from 'socket.io-client';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import ReactTooltip from 'react-tooltip';
-import { MdLastPage, MdFirstPage } from 'react-icons/md';
+import { MdLastPage, MdFirstPage, MdGroup } from 'react-icons/md';
+import { FiLink } from 'react-icons/Fi';
 import { GiphyFetch } from '@giphy/js-fetch-api';
 import Message from './Message';
 import SendMessageForm from './SendMessageForm';
@@ -430,18 +431,23 @@ class ChatBox extends React.Component {
             <div className="card-psychic session-header">
               <div style={{ display: 'flex' }}>
                 <div id="collapse-chat" className="collapse-btn" onClick={() => this.showHide()}><MdLastPage style={{ width: '100%', height: '100%' }} /></div>
+                <div className="title-box bold">
+                    BingeBox
+                  </div>
                 <CopyToClipboard text={currentSession}>
-                  <div className="username-input" id="copy-session">
-                    Share your session ID -
-                    {' '}
-                    {currentSession}
+                  <div className="copy-session-btn" id="copy-session">
+                    <FiLink style={{ width: '100%', height: '100%' }} />
                   </div>
                 </CopyToClipboard>
+                <div class="dropdown">
+                  <button class="dropbtn"><MdGroup style={{ width: '100%', height: '100%' }} /></button>
+                  <div class="dropdown-content">
+                    <div a><VoiceChatter socket={this.socket} onlineUsers={onlineUsers} liveCalls={liveCalls} updateLiveCalls={(calls) => this.updateLiveCalls(calls)} /></div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="card-psychic session-header" style={{ gridRow: 2 }}>
-              <VoiceChatter socket={this.socket} onlineUsers={onlineUsers} liveCalls={liveCalls} updateLiveCalls={(calls) => this.updateLiveCalls(calls)} />
-            </div>
+
             <div id="chat-message-list">
               {receivedMsgs.map((messageData) => <Message username={nicknameInput} messageData={messageData} userId={this.socket.id} />)}
             </div>
