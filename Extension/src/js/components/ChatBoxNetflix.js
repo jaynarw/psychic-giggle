@@ -112,7 +112,7 @@ class ChatBox extends React.Component {
       this.gf.gif(gifMessage.gifId).then((fetchedGif) => {
         const { data } = fetchedGif;
         receivedMsgs.unshift({
-          from: gifMessage.from,
+          fromMe: gifMessage.fromMe,
           gifData: data,
           nickname: gifMessage.nickname,
         });

@@ -62,8 +62,8 @@ function Message(props) {
         getStatusMessage(messageData)
       )}
       {messageData.gifData && (
-        <div className={`message-row ${messageData.from === userId ? 'you-message' : 'other-message'}`}>
-          {messageData.from !== userId && <div className="message-from">{messageData.nickname}</div>}
+        <div className={`message-row ${messageData.fromMe ? 'you-message' : 'other-message'}`}>
+          {!messageData.fromMe && <div className="message-from">{messageData.nickname}</div>}
           <div className={messageData.gifData.is_sticker ? '' : 'message-text'}>
             <Gif gif={messageData.gifData} backgroundColor="#121212" hideAttribution noLink />
           </div>
@@ -74,8 +74,8 @@ function Message(props) {
       && !messageData.status
       && !messageData.gifData
       && (
-      <div className={`message-row ${messageData.from === userId ? 'you-message' : 'other-message'}`}>
-        {messageData.from !== userId && <div className="message-from">{messageData.nickname}</div>}
+      <div className={`message-row ${messageData.fromMe ? 'you-message' : 'other-message'}`}>
+        {!messageData.fromMe && <div className="message-from">{messageData.nickname}</div>}
         <div className="message-text">
           {messageData.message}
         </div>
