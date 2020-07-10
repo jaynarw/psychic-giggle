@@ -34,6 +34,7 @@
       "default_title": "BingeBox"      
     },
     "web_accessible_resources": [
-      "img/PoweredBy_200px-Black_HorizText.png"
+      "img/PoweredBy_200px-Black_HorizText.png",
+      "img/popkaun-bg.png"
     ]
   }
