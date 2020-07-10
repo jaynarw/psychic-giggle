@@ -143,16 +143,11 @@ class ChatBox extends React.Component {
     this.socket.on('set time', (state) => {
       const { currentVideo } = { ...this.state };
       if (currentVideo) {
-        // currentVideo.currentTime = state.time;
         if (state.paused !== currentVideo.paused) {
           if (state.paused) {
             this.eventQueue.push({ pause: true });
-            // currentVideo.pause();
-            this.performSync = false;
           } else {
             this.eventQueue.push({ play: true });
-            // currentVideo.play();
-            this.performSync = false;
           }
         }
         this.eventQueue.push({ timeUpdate: true, time: (state.time + currentVideo.duration) });
@@ -257,13 +252,9 @@ class ChatBox extends React.Component {
       tr.currentTime = ti;
       if (state) {
         this.play = false;
-        tr.play().then(() => {
-          this.pause = false;
-          tr.pause();
-        }).catch(() => {
-          this.pause = false;
-          tr.pause();
-        });
+        this.pause = false;
+        tr.play();
+        tr.pause();
       }
     });
     seek(target, time, target.paused).then(() => {
@@ -275,9 +266,6 @@ class ChatBox extends React.Component {
   playVideo(target) {
     this.play = false;
     target.play().then(() => {
-      this.eventQueue.shift();
-      this.queueManager();
-    }).catch(() => {
       this.eventQueue.shift();
       this.queueManager();
     });
