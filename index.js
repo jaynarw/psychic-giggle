@@ -21,6 +21,10 @@ const setAsync = promisify(client.set).bind(client);
 
 const port = process.env.PORT || 3000;
 
+process.on('unhandledRejection', (err) => {
+  console.error(err);
+});
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(publicDir, 'index.html'));
 });
