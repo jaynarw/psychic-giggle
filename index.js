@@ -30,11 +30,11 @@ app.use('/', express.static(publicDir));
 http.listen(port);
 
 function getLiveSession(sessionId) {
-  return getAsync(`livesession:${sessionId}`).then(console.log).catch(console.error);
+  return getAsync(`livesession:${sessionId}`);
 }
 
 function setLiveSession(sessionId, sessionInfo) {
-  return setAsync(`livesession:${sessionId}`, JSON.stringify(sessionInfo), 'KEEPTTL').then(console.log).catch(console.error);
+  return setAsync(`livesession:${sessionId}`, JSON.stringify(sessionInfo), 'KEEPTTL');
 }
 
 function validateNickname(nickname) {
