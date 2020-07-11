@@ -476,12 +476,7 @@ class ChatBox extends React.Component {
                 <div id="collapse-chat" className="collapse-btn" onClick={() => this.showHide()}><MdLastPage style={{ width: '100%', height: '100%' }} /></div>
                 <div className="title-box bold">
                     BingeBox
-                  </div>
-
-                <div id="collapse-chat" className="collapse-btn" onClick={() => this.showHide()}>
-                  <MdLastPage style={{ width: '100%', height: '100%' }} />
                 </div>
-
                 <CopyToClipboard text={currentSession}>
                   <div className="copy-session-btn" id="copy-session">
                     <FiLink style={{ width: '100%', height: '100%' }} />

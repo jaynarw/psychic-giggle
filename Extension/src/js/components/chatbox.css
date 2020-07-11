@@ -323,7 +323,7 @@
 }
 
 .dropdown {
-  float :right;
+  float: right;
   position: relative;
   display: inline-block;
 }
@@ -366,10 +366,11 @@
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
   border-radius: 3px;
-  border: 1px solid rgba(255,255,255,0.06);
+  
   -webkit-transition: border-color .2s ease-in-out!important;
   transition: border-color .2s ease-in-out!important;
   background: #202124;}
+
 .bold {
     font-weight: bold;
 }
