@@ -472,16 +472,16 @@ class ChatBox extends React.Component {
           <>
             <div className="card-psychic session-header">
               <div style={{ display: 'flex' }}>
-<<<<<<< HEAD
+
                 <div id="collapse-chat" className="collapse-btn" onClick={() => this.showHide()}><MdLastPage style={{ width: '100%', height: '100%' }} /></div>
                 <div className="title-box bold">
                     BingeBox
                   </div>
-=======
+
                 <div id="collapse-chat" className="collapse-btn" onClick={() => this.showHide()}>
                   <MdLastPage style={{ width: '100%', height: '100%' }} />
                 </div>
->>>>>>> 9b097f8da1f1e51d1fa47c05e5935f593540c40a
+
                 <CopyToClipboard text={currentSession}>
                   <div className="copy-session-btn" id="copy-session">
                     <FiLink style={{ width: '100%', height: '100%' }} />
