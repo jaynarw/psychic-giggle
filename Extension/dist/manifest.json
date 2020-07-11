@@ -1,11 +1,7 @@
 {
     "manifest_version": 2,
-<<<<<<< HEAD
     "name": "BingeBox - Watch movies with Voice chat",
     "description": "Watch Prime Video and Netflix remotely with friends using built in chat and group voice call.",
-=======
-    
->>>>>>> 58a0b61a2db8913cc24280d9126c646ad98a6883
     "version": "0.0.0.1",
     "icons": {
       "16": "img/16.png",
