@@ -19,7 +19,7 @@ const sessionLife = 60 * 60 * 24;
 const getAsync = promisify(client.get).bind(client);
 const setAsync = promisify(client.set).bind(client);
 
-const port = process.env.PORT || 3100;
+const port = process.env.PORT || 3000;
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(publicDir, 'index.html'));
