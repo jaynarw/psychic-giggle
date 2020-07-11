@@ -8,21 +8,12 @@
       "48": "img/48.png",
       "128": "img/128.png"
     },
-    "content_scripts": [
-        {
-          "matches": ["*://*.primevideo.com/*"],
-          "js": ["js/content.js"]
-        },
-        {
-          "matches": ["*://*.netflix.com/*"],
-          "js": ["js/contentNetflix.js"]
-        }
-    ],
+    "permissions" : ["*://www.netflix.com/watch/*", "*://www.primevideo.com/*", "declarativeContent"],
     "background": {
       "persistent": false,
       "scripts": ["js/background.js"]
     },
-    "browser_action": {
+    "page_action": {
       "default_icon": {                    
         "16": "img/16.png"
       },
