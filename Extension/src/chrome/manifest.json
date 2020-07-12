@@ -2,13 +2,13 @@
     "manifest_version": 2,
     "name": "BingeBox - Watch movies with Voice chat",
     "description": "Watch Prime Video and Netflix remotely with friends using built in chat and group voice call.",
-    "version": "0.0.0.1",
+    "version": "0.0.0.9",
     "icons": {
       "16": "img/16.png",
       "48": "img/48.png",
       "128": "img/128.png"
     },
-    "permissions" : ["*://www.netflix.com/watch/*", "*://www.primevideo.com/*", "declarativeContent"],
+    "permissions" : ["*://www.netflix.com/watch/*", "*://www.primevideo.com/*", "declarativeContent", "storage"],
     "background": {
       "persistent": false,
       "scripts": ["js/background.js"]
@@ -17,7 +17,8 @@
       "default_icon": {                    
         "16": "img/16.png"
       },
-      "default_title": "BingeBox"      
+      "default_title": "BingeBox",
+      "default_popup": "popup.html"     
     },
     "web_accessible_resources": [
       "img/PoweredBy_200px-Black_HorizText.png",

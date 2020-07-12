@@ -36,6 +36,7 @@ class ChatBox extends React.Component {
       onlineUsers: [],
       typingUsers: [],
       notifications: 0,
+      theme: 'DARK',
     };
     this.socket = io('https://www.bingebox.live');
     this.gf = new GiphyFetch('lwiMnpcorQHdFIivZg43l3BJfJRlzdYO');
@@ -52,6 +53,7 @@ class ChatBox extends React.Component {
     this.bufferObserver = null;
 
     this.handleVideoEvents = this.handleVideoEvents.bind(this);
+    this.themeChange = this.themeChange.bind(this);
   }
 
   componentDidMount() {
@@ -80,6 +82,16 @@ class ChatBox extends React.Component {
       });
     }));
     this.bufferObserver.observe(buffer, { attributes: true, attributeFilter: ['style'] });
+
+    chrome.storage.local.get('theme', (result) => {
+      this.setState({ theme: result.theme });
+      const psychicGiggler = document.getElementById('psychic-giggler');
+      if (result.theme === 'TRANSPARENT') {
+        sdk.childNodes.forEach((elt) => {
+          if (elt !== psychicGiggler) elt.style.setProperty('width', '100%', 'important');
+        });
+      }
+    });
 
     this.socket.on('update users list', (onlineUsers) => {
       this.setState({ onlineUsers });
@@ -217,6 +229,8 @@ class ChatBox extends React.Component {
       }
       if (!this.queueManagerRunning && this.eventQueue[0]) this.queueManager();
     });
+
+    chrome.storage.onChanged.addListener(this.themeChange);
   }
 
   componentWillUnmount() {
@@ -232,6 +246,29 @@ class ChatBox extends React.Component {
       this.bufferObserver = null;
     }
     this.socket.disconnect();
+    chrome.storage.onChanged.removeListener(this.themeChange);
+  }
+
+  themeChange(changes) {
+    console.log('CHanges', changes);
+    Object.keys(changes).forEach((key) => {
+      if (key === 'theme') {
+        const { isVisible } = { ...this.state };
+        const theme = changes[key].newValue;
+        this.setState({ theme });
+        const [sdk] = document.getElementsByClassName('webPlayerSDKContainer');
+        const psychicGiggler = document.getElementById('psychic-giggler');
+        if (theme === 'TRANSPARENT') {
+          sdk.childNodes.forEach((elt) => {
+            if (elt !== psychicGiggler) elt.style.setProperty('width', '100%', 'important');
+          });
+        } else {
+          sdk.childNodes.forEach((elt) => {
+            if (elt !== psychicGiggler && isVisible) elt.style.setProperty('width', '80%', 'important');
+          });
+        }
+      }
+    });
   }
 
   pauseVideo(target) {
@@ -364,7 +401,7 @@ class ChatBox extends React.Component {
   }
 
   showHide() {
-    const { isVisible } = { ...this.state };
+    const { isVisible, theme } = { ...this.state };
     const [sdk] = document.getElementsByClassName('webPlayerSDKContainer');
     if (isVisible) {
       sdk.childNodes.forEach((elt) => {
@@ -373,9 +410,11 @@ class ChatBox extends React.Component {
       document.getElementById('psychic-giggler').style.width = '0%';
       setTimeout(() => { this.setState({ isVisible: false }); }, 200);
     } else {
-      sdk.childNodes.forEach((elt) => {
-        elt.style.setProperty('width', '80%', 'important');
-      });
+      if (theme === 'DARK') {
+        sdk.childNodes.forEach((elt) => {
+          elt.style.setProperty('width', '80%', 'important');
+        });
+      }
       document.getElementById('psychic-giggler').style.width = '20%';
       setTimeout(() => { this.setState({ isVisible: true }); }, 200);
       this.setState({ notifications: 0 });
@@ -400,6 +439,7 @@ class ChatBox extends React.Component {
       onlineUsers,
       typingUsers,
       notifications,
+      theme,
     } = { ...this.state };
     const popcornBg = chrome.runtime.getURL('img/popkaun-bg.png');
     return (
@@ -423,7 +463,7 @@ class ChatBox extends React.Component {
             <ReactTooltip place="left" type="light" />
           </>
         )}
-        <div id="psychick" className={`${currentSession ? '' : 'session-form-enabled'}`}>
+        <div id="psychick" className={`${currentSession ? '' : 'session-form-enabled'} ${(theme === 'TRANSPARENT' && currentSession) ? 'transparent' : ''}`}>
           {!currentSession && (
           <>
             <LoginIllustration />

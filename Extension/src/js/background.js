@@ -25,30 +25,30 @@ chrome.runtime.onInstalled.addListener((details) => {
       actions: [new chrome.declarativeContent.ShowPageAction()],
     }]);
   });
-  chrome.pageAction.onClicked.addListener(() => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const currentTabURL = new URL(tabs[0].url);
-      chrome.tabs.sendMessage(tabs[0].id, { type: 'existenceIs' }, (response) => {
-        if (typeof response === 'undefined') {
-          if (chrome.runtime.lastError) {
-            chrome.tabs.executeScript({ file: 'js/scriptInjectedChecker.js' });
-            if (currentTabURL.hostname.indexOf('.primevideo.') !== -1) {
-              chrome.tabs.executeScript({ file: 'js/content.js' });
-            } else if (currentTabURL.hostname.indexOf('.netflix.') !== -1) {
-              chrome.tabs.executeScript({ file: 'js/contentNetflix.js' });
-            }
-          }
-        } else if (response.type === 'pain') { /* Checks if content script is already injected */
-          console.log('Already injected');
-        } else {
-          chrome.tabs.executeScript({ file: 'js/scriptInjectedChecker.js' });
-          if (currentTabURL.hostname.indexOf('.primevideo.') !== -1) {
-            chrome.tabs.executeScript({ file: 'js/content.js' });
-          } else if (currentTabURL.hostname.indexOf('.netflix.') !== -1) {
-            chrome.tabs.executeScript({ file: 'js/contentNetflix.js' });
-          }
-        }
-      });
-    });
-  });
+  // chrome.pageAction.onClicked.addListener(() => {
+  //   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+  //     const currentTabURL = new URL(tabs[0].url);
+  //     chrome.tabs.sendMessage(tabs[0].id, { type: 'existenceIs' }, (response) => {
+  //       if (typeof response === 'undefined') {
+  //         if (chrome.runtime.lastError) {
+  //           chrome.tabs.executeScript({ file: 'js/scriptInjectedChecker.js' });
+  //           if (currentTabURL.hostname.indexOf('.primevideo.') !== -1) {
+  //             chrome.tabs.executeScript({ file: 'js/content.js' });
+  //           } else if (currentTabURL.hostname.indexOf('.netflix.') !== -1) {
+  //             chrome.tabs.executeScript({ file: 'js/contentNetflix.js' });
+  //           }
+  //         }
+  //       } else if (response.type === 'pain') { /* Checks if content script is already injected */
+  //         console.log('Already injected');
+  //       } else {
+  //         chrome.tabs.executeScript({ file: 'js/scriptInjectedChecker.js' });
+  //         if (currentTabURL.hostname.indexOf('.primevideo.') !== -1) {
+  //           chrome.tabs.executeScript({ file: 'js/content.js' });
+  //         } else if (currentTabURL.hostname.indexOf('.netflix.') !== -1) {
+  //           chrome.tabs.executeScript({ file: 'js/contentNetflix.js' });
+  //         }
+  //       }
+  //     });
+  //   });
+  // });
 });

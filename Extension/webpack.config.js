@@ -83,8 +83,9 @@ module.exports = {
     new CopyWebpackPlugin({
       patterns: [
         { from: 'chrome/img', to: 'img' },
-        // { from: '*.html' },
+        { from: '*.html' },
         { from: 'js/background.js', to: 'js' },
+        { from: 'js/popup.js', to: 'js' },
         { from: 'js/scriptInjectedChecker.js', to: 'js' },
         { from: 'chrome/manifest.json' },
       ],

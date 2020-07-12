@@ -2,6 +2,7 @@
   background-color: #121212;
   display: grid;
   grid-template-rows: repeat(18, 1fr) 20px 1fr;
+  border-left: solid 0.5px rgba(255,255,255,0.3);
   font-weight: normal;
   width: 100%;
   height: 100%;
@@ -37,7 +38,7 @@
   width: 20%;
   height: 100%;
   right: 0;
-  border-left: solid 0.5px rgba(255,255,255,0.3);
+  /* border-left: solid 0.5px rgba(255,255,255,0.3); */
   transition: width 0.3s ease-in-out 0s !important;
 }
 .send-message {
@@ -472,4 +473,8 @@
   align-items: center;
   background-position: center center;
   background-repeat: no-repeat;
+}
+#psychick.transparent {
+  border-left: none;
+  background-color: transparent;
 }
