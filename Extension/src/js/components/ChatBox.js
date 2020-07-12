@@ -4,7 +4,7 @@ import * as io from 'socket.io-client';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import ReactTooltip from 'react-tooltip';
 import { MdLastPage, MdFirstPage, MdGroup } from 'react-icons/md';
-import { FiLink } from 'react-icons/Fi';
+import { FiLink } from 'react-icons/fi';
 import { GiphyFetch } from '@giphy/js-fetch-api';
 import Message from './Message';
 import SendMessageForm from './SendMessageForm';
@@ -475,16 +475,18 @@ class ChatBox extends React.Component {
 
                 <div id="collapse-chat" className="collapse-btn" onClick={() => this.showHide()}><MdLastPage style={{ width: '100%', height: '100%' }} /></div>
                 <div className="title-box bold">
-                    BingeBox
+                  BingeBox
                 </div>
                 <CopyToClipboard text={currentSession}>
                   <div className="copy-session-btn" id="copy-session">
                     <FiLink style={{ width: '100%', height: '100%' }} />
                   </div>
                 </CopyToClipboard>
-                <div class="dropdown">
-                  <button class="dropbtn"><MdGroup style={{ width: '100%', height: '100%' }} /></button>
-                  <div class="dropdown-content">
+                <div className="dropdown">
+                  <button className="dropbtn" type="button">
+                    <MdGroup style={{ width: '100%', height: '100%' }} />
+                  </button>
+                  <div className="dropdown-content">
                     <div a><VoiceChatter socket={this.socket} onlineUsers={onlineUsers} liveCalls={liveCalls} updateLiveCalls={(calls) => this.updateLiveCalls(calls)} /></div>
                   </div>
                 </div>
