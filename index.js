@@ -7,9 +7,7 @@ const http = require('http').Server(app);
 const redis = require('redis');
 
 const client = redis.createClient({
-  host: 'redis-17940.c212.ap-south-1-1.ec2.cloud.redislabs.com',
-  port: 17940,
-  password: 'kCpKJ1k9vZJnYEAA1muS4KYfeDHj27cd',
+  password: 'POrpnFJvYT0MiLK1sbNY+EGME1UTxrsRL4/t1atWEfaOeYcYgOOEmCuCGVT+T23QyCRivB1dRi9NiJsc',
 });
 const io = require('socket.io')(http);
 const { v4: uuidv4 } = require('uuid');
@@ -21,7 +19,11 @@ const sessionLife = 60 * 60 * 24;
 const getAsync = promisify(client.get).bind(client);
 const setAsync = promisify(client.set).bind(client);
 
-const port = process.env.PORT || 80;
+const port = process.env.PORT || 3000;
+
+process.on('unhandledRejection', (err) => {
+  console.error(err);
+});
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(publicDir, 'index.html'));
@@ -54,6 +56,7 @@ io.on('connection', (socket) => {
   socket.on('create session', (nickname, currentTitle, fn) => {
     if (validateNickname(nickname) === true) {
       client.hgetall(`socket-data:${socket.id}`, (err, reply) => {
+        if (err) throw err;
         if (reply) {
           fn(reply.session);
         } else {
@@ -61,7 +64,7 @@ io.on('connection', (socket) => {
           const sessionInfo = { users: 1, currentTitle, userList: [{ id: socket.id, nickname }] };
           client.setex(`livesession:${newSession}`, sessionLife, JSON.stringify(sessionInfo), redis.print);
           socket.join(newSession);
-          client.hmset(`socket-data:${socket.id}`, 'session', newSession, 'nickname', nickname);
+          client.hmset(`socket-data:${socket.id}`, 'session', newSession, 'nickname', nickname, redis.print);
           fn({ success: true, session: newSession });
           io.in(newSession).emit('update users list', sessionInfo.userList);
         }
@@ -79,7 +82,7 @@ io.on('connection', (socket) => {
             const sessionInfo = JSON.parse(res);
             if (sessionInfo.currentTitle === currentTitle) {
               socket.join(sessionId);
-              client.hmset(`socket-data:${socket.id}`, 'session', sessionId, 'nickname', nickname);
+              client.hmset(`socket-data:${socket.id}`, 'session', sessionId, 'nickname', nickname, redis.print);
               socket.to(sessionId).emit('joined', nickname);
               sessionInfo.users += 1;
               sessionInfo.userList.push({ id: socket.id, nickname });
@@ -101,18 +104,21 @@ io.on('connection', (socket) => {
 
   socket.on('client sync', (data) => {
     client.hgetall(`socket-data:${socket.id}`, (err, socketData) => {
+      if (err) throw err;
       if (socketData) socket.to(socketData.session).emit('perform sync', { ...data, nickname: socketData.nickname });
     });
   });
 
   socket.on('typing', () => {
     client.hgetall(`socket-data:${socket.id}`, (err, socketData) => {
+      if (err) throw err;
       if (socketData) socket.to(socketData.session).emit('typing', socketData.nickname);
     });
   });
 
   socket.on('msg', (message) => {
     client.hgetall(`socket-data:${socket.id}`, (err, socketData) => {
+      if (err) throw err;
       if (socketData) {
         socket.to(socketData.session).emit('msg-recieved', {
           nickname: socketData.nickname,
@@ -129,6 +135,7 @@ io.on('connection', (socket) => {
 
   socket.on('gif msg', (gifId) => {
     client.hgetall(`socket-data:${socket.id}`, (err, socketData) => {
+      if (err) throw err;
       if (socketData) {
         socket.to(socketData.session).emit('gif-msg-recieved', {
           nickname: socketData.nickname,
@@ -145,6 +152,7 @@ io.on('connection', (socket) => {
 
   socket.on('sync time', () => {
     client.hget(`socket-data:${socket.id}`, 'session', (err, sessionId) => {
+      if (err) throw err;
       if (sessionId) {
         client.lpush(`sync-time-sockets:${sessionId}`, socket.id);
         socket.to(sessionId).emit('send time');
@@ -154,8 +162,10 @@ io.on('connection', (socket) => {
 
   socket.on('rec time', (state) => {
     client.hget(`socket-data:${socket.id}`, 'session', (err, sessionId) => {
+      if (err) throw err;
       if (sessionId) {
         client.lrange(`sync-time-sockets:${sessionId}`, 0, -1, (error, result) => {
+          if (error) throw error;
           if (result) {
             result.forEach((sinker) => {
               io.to(sinker).emit('set time', state);
@@ -169,6 +179,7 @@ io.on('connection', (socket) => {
 
   socket.on('offer', (data) => {
     client.hgetall(`socket-data:${socket.id}`, (err, result) => {
+      if (err) throw err;
       if (result) {
         io.to(data.target).emit('offer', {
           sdp: data.sdp,
@@ -181,6 +192,7 @@ io.on('connection', (socket) => {
 
   socket.on('answer', (data) => {
     client.hgetall(`socket-data:${socket.id}`, (err, result) => {
+      if (err) throw err;
       if (result) {
         io.to(data.target).emit('answer', {
           sdp: data.sdp,
@@ -193,6 +205,7 @@ io.on('connection', (socket) => {
 
   socket.on('hangup', (data) => {
     client.hgetall(`socket-data:${socket.id}`, (err, result) => {
+      if (err) throw err;
       if (result) {
         io.to(data.target).emit('hangup', {
           name: socket.id,
@@ -204,6 +217,7 @@ io.on('connection', (socket) => {
 
   socket.on('candidate', (data) => {
     client.hgetall(`socket-data:${socket.id}`, (err, result) => {
+      if (err) throw err;
       if (result) {
         io.to(data.target).emit('candidate', {
           name: socket.id,
@@ -215,6 +229,7 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     client.hgetall(`socket-data:${socket.id}`, (err, result) => {
+      if (err) throw err;
       if (result) {
         const { session, nickname } = result;
         io.to(session).emit('left', nickname);
