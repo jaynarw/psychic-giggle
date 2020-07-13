@@ -1,9 +1,12 @@
+/* eslint-disable jsx-a11y/click-events-have-key-events */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable react/prop-types */
 import React from 'react';
 import * as io from 'socket.io-client';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import ReactTooltip from 'react-tooltip';
-import { MdLastPage, MdFirstPage } from 'react-icons/md';
+import { MdLastPage, MdFirstPage, MdGroup } from 'react-icons/md';
+import { FiLink } from 'react-icons/fi';
 import { GiphyFetch } from '@giphy/js-fetch-api';
 import Message from './Message';
 import SendMessageForm from './SendMessageForm';
@@ -15,6 +18,25 @@ function typingStatusFromUsers(users) {
   if (users.length === 0) return '';
   return `${users.join(', ')} ${users.length > 1 ? 'are' : 'is'} typing...`;
 }
+/* When the user clicks on the button,
+  toggle between hiding and showing the dropdown content */
+function myFunction() {
+  document.getElementById('myDropdown').classList.toggle('show');
+}
+
+// Close the dropdown if the user clicks outside of it
+window.onclick = function (event) {
+  if (!event.target.matches('.dropbtn')) {
+    const dropdowns = document.getElementsByClassName('dropdown-content');
+    let i;
+    for (i = 0; i < dropdowns.length; i++) {
+      const openDropdown = dropdowns[i];
+      if (openDropdown.classList.contains('show')) {
+        openDropdown.classList.remove('show');
+      }
+    }
+  }
+};
 
 class ChatBox extends React.Component {
   constructor(props) {
@@ -474,17 +496,34 @@ class ChatBox extends React.Component {
                 <div id="collapse-chat" className="collapse-btn" onClick={() => this.showHide()}>
                   <MdLastPage style={{ width: '100%', height: '100%' }} />
                 </div>
+                <div className="title-box bold">
+                  BingeBox
+                </div>
                 <CopyToClipboard text={currentSession}>
-                  <div className="username-input" id="copy-session">
-                    Share your session ID -
-                    {' '}
-                    {currentSession}
+                  <div className="copy-session-btn" id="copy-session">
+                    <FiLink style={{ width: '100%', height: '100%' }} />
                   </div>
                 </CopyToClipboard>
+                <div className="dropdown">
+                  <button onClick="myFunction()" className="dropbtn" type="button">
+                    {' '}
+                    <MdGroup style={{ width: '100%', height: '100%' }} />
+                    {' '}
+                  </button>
+                  <div id="myDropdown" className="dropdown-content">
+                    <a><VoiceChatter socket={this.socket} onlineUsers={onlineUsers} liveCalls={liveCalls} updateLiveCalls={(calls) => this.updateLiveCalls(calls)} /></a>
+
+                  </div>
+                </div>
+                <div className="dropdown">
+                  <button className="dropbtn" type="button">
+                    <MdGroup style={{ width: '100%', height: '100%' }} />
+                  </button>
+                  <div className="dropdown-content">
+                    <div><VoiceChatter socket={this.socket} onlineUsers={onlineUsers} liveCalls={liveCalls} updateLiveCalls={(calls) => this.updateLiveCalls(calls)} /></div>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="card-psychic session-header" style={{ gridRow: 2 }}>
-              <VoiceChatter socket={this.socket} onlineUsers={onlineUsers} liveCalls={liveCalls} updateLiveCalls={(calls) => this.updateLiveCalls(calls)} />
             </div>
             <div id="chat-message-list">
               {receivedMsgs.map((messageData) => <Message username={nicknameInput} messageData={messageData} userId={this.socket.id} />)}

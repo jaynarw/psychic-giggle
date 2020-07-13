@@ -168,7 +168,7 @@ class VoiceChatter extends React.Component {
                 id={`audio-${user.id}`}
                 controls
                 autoPlay
-                style={{ display: 'none' }}
+                style={{ display: 'flex' }}
               />,
             ]
         ))}
