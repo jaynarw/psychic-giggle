@@ -505,7 +505,7 @@ class ChatBox extends React.Component {
                   </div>
                 </CopyToClipboard>
                 <div className="dropdown">
-                  <button onClick="myFunction()" className="dropbtn">
+                  <button onClick="myFunction()" className="dropbtn" type="button">
                     {' '}
                     <MdGroup style={{ width: '100%', height: '100%' }} />
                     {' '}
