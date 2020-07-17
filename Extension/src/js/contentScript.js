@@ -39,7 +39,7 @@ function check() {
     }
   }
 }
-check();
+
 const config = { attribute: true, childList: true, subtree: true };
 const obs = new MutationObserver(check);
 obs.observe(document.body, config);

@@ -35,7 +35,7 @@ function check() {
   }
 }
 
-check();
+
 const config = { attribute: false, childList: true, subtree: true };
 const obs = new MutationObserver(check);
 obs.observe(document.body, config);
