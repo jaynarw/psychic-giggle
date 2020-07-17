@@ -56,7 +56,7 @@
 }
 .send-message:focus-within {
   background-color: #000;
-  border: solid 1px #7289da;
+  border: solid 1px #7289DA;
 }
 .send-message #msg {
   transition: background-color .2s ease-in-out!important;
@@ -158,7 +158,7 @@
   border-color: rgb(255,255,255,0.1);
 }
 .username-input:focus {
-  border-color: #7289da;
+  border-color: #7289DA;
 }
 /* .session-form {
   width: 80%;
@@ -169,8 +169,10 @@
   color: rgba(255, 255, 255, 0.60);
 }
 .session-button {
-  color: #fff;
-  background-color: #7289da;
+  /* color: #fff; */
+  color: rgba(0,0,0,0.88);
+  /* background-color: #B1063A; */
+  background-color: #f19e98;
   font-size: 14px;
   font-weight: 500;
   line-height: 24px;
@@ -188,10 +190,12 @@
   text-align: center;
 }
 .session-button:hover {
-  background-color: #677bc4;
+  /* background-color: #e77970; */
+  background-color: #de918c;
 }
 .session-button:active {
-  background-color: #5b6eae;
+  /* background-color: #f15c4b; */
+  background-color: #b77774;
 }
 .or-divider {
   display:flex;
@@ -220,7 +224,8 @@
 .card-psychic {
   align-items: center;
   /* display: flex; */
-  background: #292a2d;
+  /* background: #292a2d; */
+  background: rgba(255,255,255,0.05);
   padding: 5%;
   flex-direction: column;
   width: 90%;
@@ -460,16 +465,96 @@
   font-weight: normal;
   font-family: Arial, Helvetica, sans-serif	;
 }
-.background-popcorn {
-  background-size: contain;
-  height: 36px;
-  font-weight: bold;
-  color: white;
-  line-height: 42px;
-  text-align: center;
-  font-size: 12px;
-  /* display: inline-grid; */
-  align-items: center;
-  background-position: center center;
-  background-repeat: no-repeat;
+.header-bingebox {
+  width: 20%;
+  position: fixed;
+  /* margin-top: 15px; */
+  box-sizing: border-box;
+  padding: 10px 2%;
+  /* justify-self: flex-start!important; */
+  top: 0;
+  background: #272727;
 }
+.logo-bingebox {
+  display: flex;
+  justify-content: center;
+}
+.popcorn-logo {
+  /* object-fit: contain;
+  margin: 0 auto;
+  display: block;
+  cursor: pointer;
+  height: 60px;
+  margin: -12px 10px 0 0px; */
+  height: 45px;
+    margin: -2px 10px 0 0px;
+}
+.logo-bingebox.animated .popcorn-logo {
+  -webkit-animation: animationFrames ease-in-out 1s;
+  -webkit-animation-iteration-count: 1;
+  /* -webkit-animation-play-state: paused; */
+  -webkit-animation-fill-mode: forwards;
+}
+@-webkit-keyframes animationFrames {
+  10% {
+    -webkit-transform: rotate(5deg);
+  }
+  20% {
+    -webkit-transform: rotate(-5deg);
+  }
+  30% {
+    -webkit-transform: rotate(5deg);
+  }
+  40% {
+    -webkit-transform: rotate(-5deg);
+  }
+  50% {
+    -webkit-transform: rotate(5deg);
+  }
+  60% {
+    -webkit-transform: rotate(-5deg);
+  }
+  70% {
+    -webkit-transform: rotate(5deg);
+  }
+  80% {
+    -webkit-transform: rotate(-5deg);
+  }
+  90% {
+    -webkit-transform: rotate(5deg);
+  }
+  100% {
+  }
+}
+.binge {
+  font-family: "Righteous", sans-serif;
+  font-weight: 300;
+  /* color: rgba(255, 255, 255, 0.88); */
+}
+
+.box {
+  margin-left: 2px;
+  font-family: "Righteous", sans-serif;
+  font-weight: 300;
+  /* color: rgba(255, 255, 255, 0.88); */
+}
+.logo-bingebox span {
+  font-size: 40px;
+  /* color: #d43f2a; */
+  color: #f19e98;
+}
+/* .BoxShadowHelper-1 {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+}
+.BoxShadowHelper-2 {
+  box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+}
+.BoxShadowHelper-3 {
+  box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+}
+.BoxShadowHelper-4 {
+  box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+}
+.BoxShadowHelper-5 {
+  box-shadow: 0 19px 38px rgba(0,0,0,0.30), 0 15px 12px rgba(0,0,0,0.22);
+} */
