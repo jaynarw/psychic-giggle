@@ -10,7 +10,6 @@ module.exports = {
   entry: {
     content: './js/contentScript.js',
     contentNetflix: './js/contentScriptNetflix.js',
-    // scriptInjectedChecker: './js/scriptInjectedChecker.js',
     // popup: './js/popup.js',
     // background: './js/background.js',
   },
@@ -85,7 +84,6 @@ module.exports = {
         { from: 'chrome/img', to: 'img' },
         // { from: '*.html' },
         { from: 'js/background.js', to: 'js' },
-        { from: 'js/scriptInjectedChecker.js', to: 'js' },
         { from: 'chrome/manifest.json' },
       ],
     }),
