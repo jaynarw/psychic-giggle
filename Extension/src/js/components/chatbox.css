@@ -466,6 +466,19 @@
   font-weight: normal;
   font-family: Arial, Helvetica, sans-serif	;
 }
+.background-popcorn {
+  background-size: contain;
+  height: 36px;
+  font-weight: bold;
+  color: white;
+  line-height: 42px;
+  text-align: center;
+  font-size: 12px;
+  /* display: inline-grid; */
+  align-items: center;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
 .header-bingebox {
   width: 20%;
   position: fixed;
