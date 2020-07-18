@@ -172,7 +172,8 @@
   /* color: #fff; */
   color: rgba(0,0,0,0.88);
   /* background-color: #B1063A; */
-  background-color: #f19e98;
+  /* background-color: #f19e98; */
+  background-color: #9caae4;
   font-size: 14px;
   font-weight: 500;
   line-height: 24px;
@@ -191,11 +192,11 @@
 }
 .session-button:hover {
   /* background-color: #e77970; */
-  background-color: #de918c;
+  background-color: #8591c2;
 }
 .session-button:active {
   /* background-color: #f15c4b; */
-  background-color: #b77774;
+  background-color: #6d779f;
 }
 .or-divider {
   display:flex;
@@ -473,7 +474,7 @@
   padding: 10px 2%;
   /* justify-self: flex-start!important; */
   top: 0;
-  background: #272727;
+  /* background: #272727; */
 }
 .logo-bingebox {
   display: flex;
@@ -486,8 +487,15 @@
   cursor: pointer;
   height: 60px;
   margin: -12px 10px 0 0px; */
-  height: 45px;
-    margin: -2px 10px 0 0px;
+  /* height: 45px;
+  width: 28.41px;
+  margin-right: 10px;
+  min-width: 30px;
+    margin: -2px 10px 0 0px; */
+  height: 40px;
+  width: 25.25px;
+  min-width: 25.25px;
+  margin-right: 10px;
 }
 .logo-bingebox.animated .popcorn-logo {
   -webkit-animation: animationFrames ease-in-out 1s;
@@ -539,9 +547,11 @@
   /* color: rgba(255, 255, 255, 0.88); */
 }
 .logo-bingebox span {
-  font-size: 40px;
+  font-size: 35px;
+  color: rgba(255,255,255,0.88);
+  letter-spacing: -0.04em;
   /* color: #d43f2a; */
-  color: #f19e98;
+  /* color: #f19e98; */
 }
 /* .BoxShadowHelper-1 {
   box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
@@ -558,3 +568,30 @@
 .BoxShadowHelper-5 {
   box-shadow: 0 19px 38px rgba(0,0,0,0.30), 0 15px 12px rgba(0,0,0,0.22);
 } */
+.outlined-button {
+  background: rgba(0,0,0,0.2);
+  border: solid rgb(156 170 228 / 0.6) 2px;
+  color: rgb(156 170 228 / 0.8);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 24px;
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 3px;
+  padding: 2px 16px!important;
+  user-select: none;
+  outline: 0;
+  cursor: pointer;
+  height: 44px;
+  transition: .17s ease,color .17s ease!important;
+  font-family: Helvetica Neue,Helvetica,Arial,sans-serif;
+  text-align: center;
+  transition-property: border, background;
+}
+.outlined-button:hover {
+  border-color: rgba(156,170,228,0.9)!important;
+  color: rgb(156 170 228)!important;
+}
+.outlined-button:active {
+  background: rgb(156 170 228 / 0.12)!important;
+}

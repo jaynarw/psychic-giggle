@@ -31,6 +31,7 @@
     "web_accessible_resources": [
       "img/PoweredBy_200px-Black_HorizText.png",
       "img/popkaun-bg.png",
-      "img/minimal.png"
+      "img/minimal.png",
+      "img/minimal-desaturated.svg"
     ]
   }
