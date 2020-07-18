@@ -473,7 +473,7 @@ class ChatBox extends React.Component {
                 value={joinSessionInput}
                 style={{ marginBottom: '8px' }}
               />
-              <button type="button" className="session-button" onClick={(e) => this.joinSessionHandler(e)}>Join Session</button>
+              <button type="button" className="outlined-button" onClick={(e) => this.joinSessionHandler(e)}>Join Session</button>
             </div>
           </>
           )}
