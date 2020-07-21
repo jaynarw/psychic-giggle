@@ -2,12 +2,14 @@
 /* eslint-disable no-alert */
 /* eslint-disable jsx-a11y/media-has-caption */
 import React from 'react';
+import { CSSTransition } from 'react-transition-group';
 import RTCPeer from '../modules/RTCPeer';
 
 class VoiceChatter extends React.Component {
   constructor(props) {
     super(props);
     console.log('Voice chatter was constructed');
+    this.state = { firstRun: true };
     this.audioSocket = this.props.socket;
     this.audioSocket.on('offer', (msg) => this.handleOfferMsg(msg));
     this.audioSocket.on('candidate', (msg) => this.handleNewICECandidateMsg(msg));
@@ -141,38 +143,48 @@ class VoiceChatter extends React.Component {
   }
 
   render() {
-    const { onlineUsers, socket, liveCalls } = this.props;
+    const { onlineUsers, socket, liveCalls, usersDropdown } = this.props;
+    const { firstRun } = this.state;
     return (
-      <ul className="userlistbox">
-        {onlineUsers.flatMap((user) => (
-          (user.id === socket.id) ? []
-            : [
-              <li className="active-user" key={user.id}>
-                {user.nickname}
-                <span
-                  className="enable-voice"
-                  name={user.id}
-                  onClick={(event) => this.invite(event)}
-                  onMouseOver={(event) => this.hoverCall(event)}
-                  onMouseOut={(event) => this.exitHoverCall(event)}
-                >
-                  {liveCalls[user.id] ? liveCalls[user.id].status : 'Connect with Voice'}
-                </span>
-              </li>]
-        ))}
-        {onlineUsers.flatMap((user) => (
-          (user.id === socket.id) ? []
-            : [
-              <audio
-                key={user.id}
-                id={`audio-${user.id}`}
-                controls
-                autoPlay
-                style={{ display: 'none' }}
-              />,
-            ]
-        ))}
-      </ul>
+      <CSSTransition
+        in={usersDropdown}
+        timeout={200}
+        classNames="binge-slide"
+        style={{display: firstRun ? 'none' : ''}}
+        onEnter={() => this.setState({ firstRun: false })}
+      >
+        <ul className="userlistbox binge-users-dropdown">
+          {onlineUsers.flatMap((user) => (
+            (user.id === socket.id) ? []
+              : [
+                <li className="active-user" key={user.id}>
+                  {user.nickname}
+                  <span
+                    className="enable-voice"
+                    name={user.id}
+                    onClick={(event) => this.invite(event)}
+                    onMouseOver={(event) => this.hoverCall(event)}
+                    onMouseOut={(event) => this.exitHoverCall(event)}
+                  >
+                    {liveCalls[user.id] ? liveCalls[user.id].status : 'Connect with Voice'}
+                  </span>
+                </li>]
+          ))}
+          {onlineUsers.flatMap((user) => (
+            (user.id === socket.id) ? []
+              : [
+                <audio
+                  key={user.id}
+                  id={`audio-${user.id}`}
+                  controls
+                  autoPlay
+                  style={{ display: 'none' }}
+                />,
+              ]
+          ))}
+        </ul>
+      </CSSTransition>
+
     );
   }
 }

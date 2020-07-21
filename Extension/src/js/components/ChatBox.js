@@ -23,13 +23,16 @@ function moveToElementPosition(elementID, targetElementID) {
     top: `${target.offsetTop}px`,
     left: `${target.offsetLeft}px`,
   };
-  const height = `${target.offsetHeight}px`;
-  const width = `${target.offsetWidth}px`;
+  const height = target.offsetHeight;
+  const width = target.offsetWidth;
 
   from.style.left = pos.left;
   from.style.top = pos.top;
-  from.style.height = height;
-  from.style.width = width;
+  // const xRatio = width / (from.offsetWidth);
+  // const yRatio = height / (from.offsetHeight);
+  // from.style.transform = `scale(${xRatio}, ${yRatio})`;
+  // from.style.maxHeight = height;
+  // from.style.maxWidth = width;
 }
 
 function typingStatusFromUsers(users) {
@@ -59,6 +62,9 @@ class ChatBox extends React.Component {
       notifications: 0,
       removeHeader: false,
       showForm: false,
+      copied: false,
+      showSessionInfo: false,
+      usersDropdown: false,
     };
     this.socket = io('https://www.bingebox.live');
     this.gf = new GiphyFetch('lwiMnpcorQHdFIivZg43l3BJfJRlzdYO');
@@ -377,7 +383,6 @@ class ChatBox extends React.Component {
         logo.querySelector('svg').classList.add('popcorn-logo-chat');
         moveToElementPosition('.header-bingebox', '#logo-chat');
         setTimeout(() => {
-          // const container = document.getElementById('psychick');
           setTimeout(() => this.setState({ removeHeader: true }), 200);
           container.classList.remove('animated-box');
         }, 500);
@@ -397,13 +402,23 @@ class ChatBox extends React.Component {
     const { joinSessionInput, nicknameInput, nowPlaying } = { ...this.state };
     this.socket.emit('join session', joinSessionInput, nicknameInput, nowPlaying, (data) => {
       if (data.success) {
+        this.socket.emit('sync time');
+        this.setState({
+          currentSession: joinSessionInput,
+          errorMsgJoin: false,
+          errorMsg: false,
+          showForm: false,
+        });
         const logo = document.querySelector('.header-bingebox');
+        const container = document.getElementById('psychick');
         logo.style.padding = '0px';
         logo.classList.add('logo-chat');
         logo.querySelector('svg').classList.add('popcorn-logo-chat');
         moveToElementPosition('.header-bingebox', '#logo-chat');
-        this.socket.emit('sync time');
-        this.setState({ currentSession: joinSessionInput, errorMsgJoin: false, errorMsg: false });
+        setTimeout(() => {
+          setTimeout(() => this.setState({ removeHeader: true }), 200);
+          container.classList.remove('animated-box');
+        }, 500);
       } else if (data.error1) this.setState({ errorMsgJoin: data.error1 });
       else if (data.error2) this.displayError(data.error2);
     });
@@ -433,6 +448,14 @@ class ChatBox extends React.Component {
     this.setState({ liveCalls });
   }
 
+  copySessionHovered() {
+    this.setState({ showSessionInfo: true });
+  }
+
+  copySessionExit() {
+    this.setState({ showSessionInfo: false });
+  }
+
   render() {
     const {
       currentSession,
@@ -448,6 +471,9 @@ class ChatBox extends React.Component {
       notifications,
       removeHeader,
       showForm,
+      copied,
+      showSessionInfo,
+      usersDropdown,
     } = { ...this.state };
     const popcornBg = chrome.runtime.getURL('img/popkaun-bg.png');
 
@@ -527,7 +553,7 @@ class ChatBox extends React.Component {
           {currentSession && (
           <>
             <div className="session-header">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} className="main-binge-header">
                 <div id="collapse-chat" className="chat-header-icon" onClick={() => this.showHide()}>
                   <MdLastPage style={{ width: '100%', height: '100%' }} />
                 </div>
@@ -548,17 +574,36 @@ class ChatBox extends React.Component {
                   <span className="box">box</span>
                 </div>
                 <CopyToClipboard text={currentSession}>
-                  <div className="chat-header-icon" id="copy-session">
+                  <div className="chat-header-icon" id="copy-session" onMouseEnter={() => this.copySessionHovered()} onMouseLeave={() => this.copySessionExit()} onClick={() => this.setState({ copied: true })}>
                     <MdLink style={{ width: '100%', height: '100%' }} />
                   </div>
                 </CopyToClipboard>
-                <div className="chat-header-icon">
-                  <MdPeopleOutline style={{ width: '100%', height: '100%' }} />
+                <div
+                  className="chat-header-icon"
+                  onClick={() => {
+                    const { usersDropdown } = { ...this.state };
+                    this.setState({ usersDropdown: !usersDropdown });
+                  }}
+                  style={{ color: usersDropdown ? '#f19e98' : '' }}
+                >
+                  {usersDropdown ? <MdPeople style={{ width: '100%', height: '100%' }} /> : <MdPeopleOutline style={{ width: '100%', height: '100%' }} />}
                 </div>
               </div>
-            </div>
-            <div className="card-psychic session-header" style={{ gridRow: 2 }}>
-              <VoiceChatter socket={this.socket} onlineUsers={onlineUsers} liveCalls={liveCalls} updateLiveCalls={(calls) => this.updateLiveCalls(calls)} />
+              <CSSTransition
+                in={showSessionInfo}
+                timeout={200}
+                mountOnEnter
+                classNames="binge-fade"
+                onExited={() => this.setState({ copied: false })}
+              >
+                <div className="copy-session-info">
+                  Session ID -
+                  {' '}
+                  {currentSession}
+                  {copied ? ' - Copied!' : ''}
+                </div>
+              </CSSTransition>
+              <VoiceChatter socket={this.socket} onlineUsers={onlineUsers} liveCalls={liveCalls} updateLiveCalls={(calls) => this.updateLiveCalls(calls)} usersDropdown={usersDropdown} />
             </div>
             <div id="chat-message-list">
               {receivedMsgs.map((messageData) => <Message username={nicknameInput} messageData={messageData} userId={this.socket.id} />)}

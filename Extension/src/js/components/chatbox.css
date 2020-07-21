@@ -91,7 +91,7 @@
   flex-direction: column-reverse;
   padding: 0 10px;
   margin-top: 10px;
-  grid-row: 3 / 19;
+  grid-row: 2 / 19;
   overflow-y: scroll;
 }
 .message-row {
@@ -245,12 +245,12 @@
   font-style: italic;
 }
 .session-header {
+  position: relative;
   grid-row: 1;
   width: 100%;
   border-radius: 0;
   background: rgba(255,255,255,0.09);
   margin-bottom: 0;
-  padding: 10px 5%!important;
 }
 .chat-header-icon {
   transition: color .2s ease-in-out!important;
@@ -628,12 +628,14 @@
   top: calc(50% - 36px);
 }
 .popcorn-logo-chat {
+  transition: all 500ms;
   height: 32px;
   width: 20.2px;
   margin-right: 8px;
   min-width: 20.2px;
 }
 .logo-chat span{
+  transition: font-size 500ms;
   font-size: 28px!important;
 }
 #logo-chat {
@@ -645,12 +647,12 @@
 } */
 
 .binge-fade-enter {
-  opacity: 0;
+  opacity: 0!important;
   pointer-events: none;
 }
 .binge-fade-enter-active {
-  opacity: 1;
-  transition: opacity 200ms;
+  opacity: 1!important;
+  transition: opacity 200ms!important;
 }
 /* .binge-fade-enter-done {
   pointer-events: unset;
@@ -662,6 +664,9 @@
   opacity: 0;
   transition: opacity 200ms;
 }
+.binge-fade-exit-done {
+  display: none!important;
+}
 .binge-form-wrapper {
   position: absolute;
   width: 100%;
@@ -671,4 +676,63 @@
   align-items: center;
   flex-direction: column;
   background: transparent;
+}
+.copy-session-info {
+  position: absolute;
+  top: 100%;
+  height: 55px;
+  z-index: 9999;
+  left:0;
+  width: 100%;
+  background: #9CAAE4;
+  border-radius: 0px;
+
+  font-family: Roboto, sans-serif;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 15px;
+  /* line-height: 25px; */
+  display: flex;
+  align-items: center;
+  text-align: center;
+  justify-content: center;
+
+  color: rgba(0, 0, 0, 0.88);
+}
+
+.binge-slide-enter {
+  bottom: 0;
+}
+.binge-slide-enter-active {
+  transform: translateY(100%);
+  transition: transform 200ms ease-out!important;
+}
+.binge-slide-enter-done {
+  top: 100%;
+}
+/* .binge-slide-exit {
+  opacity: 1;
+} */
+.binge-slide-exit-active {
+  transform: translateY(-100%);
+  transition: transform 200ms ease-in!important;
+}
+.binge-slide-exit-done {
+  display: none!important;
+}
+.binge-users-dropdown {
+  position: absolute;
+  width: 100%;
+  display: block;
+  left: 0;
+  /* bottom: 0; */
+  height: 100px;
+  background-color: tomato;
+}
+.main-binge-header {
+  z-index: 9999;
+  width: 100%;
+  background: #272727;
+  padding: 10px 5%!important;
+  position: relative;
 }
