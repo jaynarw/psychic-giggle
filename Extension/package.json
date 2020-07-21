@@ -41,6 +41,7 @@
     "react-giphy-searchbox": "^1.4.0",
     "react-icons": "^3.10.0",
     "react-tooltip": "^4.2.7",
+    "react-transition-group": "^4.4.1",
     "socket.io-client": "^2.3.0"
   }
 }

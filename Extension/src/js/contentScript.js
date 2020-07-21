@@ -2,6 +2,11 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import ChatBox from './components/ChatBox';
 
+document.head.insertAdjacentHTML(
+  'beforeend',
+  '<link href="https://fonts.googleapis.com/css2?family=Righteous&display=swap" rel="stylesheet" />',
+);
+
 let playerSet;
 let sdk;
 let video;
