@@ -7,7 +7,6 @@ import {
   MdLastPage, MdFirstPage, MdLink, MdPeopleOutline, MdPeople,
 } from 'react-icons/md';
 import { GiphyFetch } from '@giphy/js-fetch-api';
-// import { Transition } from 'react-transition-group';
 import { CSSTransition } from 'react-transition-group';
 import Message from './Message';
 import SendMessageForm from './SendMessageForm';
@@ -23,16 +22,8 @@ function moveToElementPosition(elementID, targetElementID) {
     top: `${target.offsetTop}px`,
     left: `${target.offsetLeft}px`,
   };
-  const height = target.offsetHeight;
-  const width = target.offsetWidth;
-
   from.style.left = pos.left;
   from.style.top = pos.top;
-  // const xRatio = width / (from.offsetWidth);
-  // const yRatio = height / (from.offsetHeight);
-  // from.style.transform = `scale(${xRatio}, ${yRatio})`;
-  // from.style.maxHeight = height;
-  // from.style.maxWidth = width;
 }
 
 function typingStatusFromUsers(users) {

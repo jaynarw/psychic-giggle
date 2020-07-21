@@ -743,6 +743,7 @@
   align-items: center;
   justify-content: center;
   padding: 15px!important;
+  box-sizing: border-box;
 }
 .main-binge-header {
   z-index: 9999;
@@ -750,6 +751,7 @@
   background: #272727;
   padding: 10px 5%!important;
   position: relative;
+  box-sizing: border-box;
 }
 .binge-users-dropdown-title {
   font-family: Roboto, sans-serif;
