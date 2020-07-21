@@ -4,6 +4,7 @@
 import React from 'react';
 import { CSSTransition } from 'react-transition-group';
 import RTCPeer from '../modules/RTCPeer';
+import NoFriendsIllustration from './NoFriendsIllustration';
 
 class VoiceChatter extends React.Component {
   constructor(props) {
@@ -143,17 +144,34 @@ class VoiceChatter extends React.Component {
   }
 
   render() {
-    const { onlineUsers, socket, liveCalls, usersDropdown } = this.props;
+    const {
+      onlineUsers, socket, liveCalls, usersDropdown,
+    } = this.props;
     const { firstRun } = this.state;
     return (
       <CSSTransition
         in={usersDropdown}
-        timeout={200}
+        timeout={300}
         classNames="binge-slide"
-        style={{display: firstRun ? 'none' : ''}}
+        style={{ display: firstRun ? 'none' : '' }}
         onEnter={() => this.setState({ firstRun: false })}
       >
         <ul className="userlistbox binge-users-dropdown">
+          {onlineUsers.length <= 1
+          && (
+          <>
+            <NoFriendsIllustration />
+            <div style={{
+              color: 'rgba(255,255,255,0.6)', fontSize: '13px', fontWeight: 'normal', fontFamily: 'Roboto, sans-serif', textAlign: 'center', marginTop: '10px'
+            }}
+            >
+              Movies are better with friends!
+              <br />
+              When a friend joins the session, we’ll show it here
+            </div>
+          </>
+          )}
+          {onlineUsers.length > 1 && <span className="binge-users-dropdown-title">Active users</span>}
           {onlineUsers.flatMap((user) => (
             (user.id === socket.id) ? []
               : [

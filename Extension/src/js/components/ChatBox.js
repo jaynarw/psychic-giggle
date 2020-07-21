@@ -456,6 +456,13 @@ class ChatBox extends React.Component {
     this.setState({ showSessionInfo: false });
   }
 
+  hoverLogo() {
+    const ref = document.querySelector('#logo-chat');
+    ref.classList.remove('animated');
+    void ref.offsetWidth;
+    ref.classList.add('animated');
+  }
+
   render() {
     const {
       currentSession,
@@ -557,7 +564,7 @@ class ChatBox extends React.Component {
                 <div id="collapse-chat" className="chat-header-icon" onClick={() => this.showHide()}>
                   <MdLastPage style={{ width: '100%', height: '100%' }} />
                 </div>
-                <div className="logo-bingebox animated logo-chat" id="logo-chat">
+                <div className="logo-bingebox animated logo-chat" id="logo-chat" onMouseEnter={() => this.hoverLogo()}>
                   <svg className="popcorn-logo-chat" version="1.0" xmlns="http://www.w3.org/2000/svg" width="298px" height="472px" viewBox="0 0 2980 4720" preserveAspectRatio="xMidYMid meet">
                     <g id="layer101" fill="rgba(255,255,255,0.88)" stroke="none">
                       <path d="M575 4690 c-3 -14 -18 -115 -35 -225 -16 -110 -138 -902 -270 -1760 -132 -858 -240 -1576 -240 -1596 0 -72 -7 -69 191 -69 l179 0 -5 38 c-3 20 24 276 58 567 l64 530 -32 65 c-166 333 -149 751 42 1065 39 65 132 188 145 193 4 2 8 22 8 45 1 23 12 128 25 232 30 236 100 924 94 929 -2 2 -52 6 -111 8 l-108 3 -5 -25z" />

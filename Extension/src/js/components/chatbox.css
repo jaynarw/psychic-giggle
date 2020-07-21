@@ -304,6 +304,7 @@
   transition: background-color .2s ease-in-out!important;
   list-style: none;
   padding: 4px;
+  width: 100%;
 }
 .active-user:hover {
   background-color: rgb(255,255,255,0.1);
@@ -488,6 +489,7 @@
   transition: all ease-in-out 500ms;
   left: calc(50% - 86.5px);
   padding: 0;
+  z-index: 9;
   /* padding: 15px 2% 10px 2%; */
   /* justify-self: flex-start!important; */
   top: 15px;
@@ -520,6 +522,14 @@
   /* -webkit-animation-play-state: paused; */
   -webkit-animation-fill-mode: forwards;
 }
+
+.logo-bingebox.animated .popcorn-logo-chat {
+  -webkit-animation: animationFrames ease-in-out 1s;
+  -webkit-animation-iteration-count: 1;
+  /* -webkit-animation-play-state: paused; */
+  -webkit-animation-fill-mode: forwards;
+}
+
 @-webkit-keyframes animationFrames {
   10% {
     -webkit-transform: rotate(5deg);
@@ -705,7 +715,7 @@
 }
 .binge-slide-enter-active {
   transform: translateY(100%);
-  transition: transform 200ms ease-out!important;
+  transition: transform 300ms ease-out!important;
 }
 .binge-slide-enter-done {
   top: 100%;
@@ -715,7 +725,7 @@
 } */
 .binge-slide-exit-active {
   transform: translateY(-100%);
-  transition: transform 200ms ease-in!important;
+  transition: transform 300ms ease-in!important;
 }
 .binge-slide-exit-done {
   display: none!important;
@@ -726,8 +736,13 @@
   display: block;
   left: 0;
   /* bottom: 0; */
-  height: 100px;
-  background-color: tomato;
+  /* height: 100px; */
+  background-color: #1e1e1e;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 15px!important;
 }
 .main-binge-header {
   z-index: 9999;
@@ -735,4 +750,12 @@
   background: #272727;
   padding: 10px 5%!important;
   position: relative;
+}
+.binge-users-dropdown-title {
+  font-family: Roboto, sans-serif;
+  font-weight: bold;
+  color: rgb(241 158 152 / 0.88);;
+  font-size: 14px;
+  align-self: flex-start;
+  margin-bottom: 6px;
 }
