@@ -89,7 +89,7 @@
 #chat-message-list {
   display: flex;
   flex-direction: column-reverse;
-  padding: 0 10px;
+  padding: 0 5px 0 10px;
   margin-top: 10px;
   grid-row: 2 / 19;
   overflow-y: scroll;
@@ -760,4 +760,23 @@
   font-size: 14px;
   align-self: flex-start;
   margin-bottom: 6px;
+}
+
+
+#psychick ::-webkit-scrollbar {
+    background-color:transparent;
+    width:5px;
+}
+
+#psychick ::-webkit-scrollbar-track {
+    background-color:transparent;
+}
+
+#psychick ::-webkit-scrollbar-thumb {
+    background-color:rgba(255,255,255,0.2);
+    border-radius:0px;
+}
+
+#psychick ::-webkit-scrollbar-button {
+  display:none
 }
