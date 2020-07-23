@@ -735,6 +735,7 @@
   width: 100%;
   display: block;
   left: 0;
+  z-index: 1;
   /* bottom: 0; */
   /* height: 100px; */
   background-color: #1e1e1e;
