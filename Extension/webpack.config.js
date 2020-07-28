@@ -10,6 +10,7 @@ module.exports = {
   entry: {
     content: './js/contentScript.js',
     contentNetflix: './js/contentScriptNetflix.js',
+    contentHotstar: './js/contentScriptHotstar.js',
     // popup: './js/popup.js',
     // background: './js/background.js',
   },

@@ -11,7 +11,7 @@ class GiphySearchBoxWrapper extends React.Component {
     const { handleGifSelection, giphySearchIndex } = this.props;
     return (
       <ReactGiphySearchBox
-        apiKey="lwiMnpcorQHdFIivZg43l3BJfJRlzdYO"
+        apiKey="25Pso92Llhd2BTDtlh0ftwn069vyCVKn"
         onSelect={(item) => handleGifSelection(item)}
         library={giphySearchIndex}
         searchPlaceholder={`Search for ${giphySearchIndex.charAt(0).toUpperCase() + giphySearchIndex.slice(1)}`}

@@ -82,31 +82,33 @@ class ChatBox extends React.Component {
         this.setState({ showForm: true });
       }, 500);
     }, 500);
-    const [sdk] = document.getElementsByClassName('webPlayerSDKContainer');
-    const [buffer] = document.getElementsByClassName('f1la87wm');
-    if (sdk) {
-      const [video] = sdk.getElementsByTagName('video');
-      if (video) {
-        this.setState({ currentVideo: video });
 
-        video.addEventListener('pause', this.handleVideoEvents);
-        video.addEventListener('play', this.handleVideoEvents);
-        video.addEventListener('seeked', this.handleVideoEvents);
-        video.addEventListener('seeking', this.handleVideoEvents);
-      }
+    // const [buffer] = document.getElementsByClassName('f1la87wm');
+    const playerSet = document.querySelector('.player-base');
+    const buffer = playerSet.querySelector('.web_player_loader');
+    const [video] = playerSet.getElementsByTagName('video');
+    if (video) {
+      this.setState({ currentVideo: video });
+
+      video.addEventListener('pause', this.handleVideoEvents);
+      video.addEventListener('play', this.handleVideoEvents);
+      video.addEventListener('seeked', this.handleVideoEvents);
+      video.addEventListener('seeking', this.handleVideoEvents);
     }
 
     this.bufferObserver = new MutationObserver(((mutations) => {
       mutations.forEach((mutationRecord) => {
-        if (mutationRecord.target.style.display === 'none') {
+        if (mutationRecord.target.classList.contains('loader')) {
+          this.socket.emit('client sync', { type: 'BUFFER STARTED' });
+          console.log('Buffer started');
+        } else {
           const { currentVideo } = { ...this.state };
           this.socket.emit('client sync', { type: 'BUFFER ENDED', paused: currentVideo.paused });
-        } else {
-          this.socket.emit('client sync', { type: 'BUFFER STARTED' });
+          console.log('Buffer ended');
         }
       });
     }));
-    this.bufferObserver.observe(buffer, { attributes: true, attributeFilter: ['style'] });
+    this.bufferObserver.observe(buffer, { attributes: true, attributeFilter: ['class'] });
 
     this.socket.on('update users list', (onlineUsers) => {
       this.setState({ onlineUsers });
@@ -417,17 +419,20 @@ class ChatBox extends React.Component {
 
   showHide() {
     const { isVisible } = { ...this.state };
-    const [sdk] = document.getElementsByClassName('webPlayerSDKContainer');
+    const playerSet = document.querySelector('.player-base');
+    const playerSkin = playerSet.querySelector('.skin-overlay-container');
     if (isVisible) {
-      sdk.childNodes.forEach((elt) => {
+      playerSet.childNodes.forEach((elt) => {
         elt.style.setProperty('width', '100%', 'important');
       });
+      playerSkin.style.setProperty('width', '100%', 'important');
       document.getElementById('psychic-giggler').style.width = '0%';
       setTimeout(() => { this.setState({ isVisible: false }); }, 200);
     } else {
-      sdk.childNodes.forEach((elt) => {
+      playerSet.childNodes.forEach((elt) => {
         elt.style.setProperty('width', '80%', 'important');
       });
+      playerSkin.style.setProperty('width', '80%', 'important');
       document.getElementById('psychic-giggler').style.width = '20%';
       setTimeout(() => { this.setState({ isVisible: true }); }, 200);
       this.setState({ notifications: 0 });

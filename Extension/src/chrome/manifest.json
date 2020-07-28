@@ -16,6 +16,10 @@
         {
           "matches": ["*://*.netflix.com/*"],
           "js": ["js/contentNetflix.js"]
+        },
+        {
+          "matches": ["*://*.hotstar.com/*"],
+          "js": ["js/contentHotstar.js"]
         }
     ],
     "background": {
