@@ -32,6 +32,7 @@
     "@giphy/react-components": "^1.2.0",
     "@webscopeio/react-textarea-autocomplete": "^4.7.0",
     "emoji-mart": "^3.0.0",
+    "firebase": "^7.17.1",
     "less-loader": "^6.1.2",
     "lodash": "^4.17.15",
     "react": "^16.13.1",

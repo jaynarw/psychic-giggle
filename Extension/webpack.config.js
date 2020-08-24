@@ -11,8 +11,8 @@ module.exports = {
     content: './js/contentScript.js',
     contentNetflix: './js/contentScriptNetflix.js',
     contentHotstar: './js/contentScriptHotstar.js',
-    // popup: './js/popup.js',
-    // background: './js/background.js',
+    credentials: './js/credentials.js',
+    background: './js/background.js',
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -83,9 +83,11 @@ module.exports = {
     new CopyWebpackPlugin({
       patterns: [
         { from: 'chrome/img', to: 'img' },
-        // { from: '*.html' },
-        { from: 'js/background.js', to: 'js' },
+        { from: 'chrome/*.html' },
+        // { from: 'js/background.js', to: 'js' },
+        // { from: 'js/credentials.js', to: 'js' },
         { from: 'chrome/manifest.json' },
+        { from: 'js/firebase-messaging-sw.js' },
       ],
     }),
   ],

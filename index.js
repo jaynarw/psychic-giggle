@@ -1,14 +1,20 @@
 /* eslint-disable no-console */
 const remove = require('lodash/remove');
 const express = require('express');
+const cors = require('cors');
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const admin = require('firebase-admin');
+const rateLimit = require('express-rate-limit');
+const AES = require('crypto-js/aes');
 
 const app = express();
 const http = require('http').Server(app);
 const redis = require('redis');
 
-const client = redis.createClient({
-  password: 'POrpnFJvYT0MiLK1sbNY+EGME1UTxrsRL4/t1atWEfaOeYcYgOOEmCuCGVT+T23QyCRivB1dRi9NiJsc',
-});
+// const client = redis.createClient({
+//   password: 'POrpnFJvYT0MiLK1sbNY+EGME1UTxrsRL4/t1atWEfaOeYcYgOOEmCuCGVT+T23QyCRivB1dRi9NiJsc',
+// });
 const io = require('socket.io')(http);
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
@@ -16,17 +22,297 @@ const { promisify } = require('util');
 
 const publicDir = path.join(__dirname, 'public');
 const sessionLife = 60 * 60 * 24;
-const getAsync = promisify(client.get).bind(client);
-const setAsync = promisify(client.set).bind(client);
+// const getAsync = promisify(client.get).bind(client);
+// const setAsync = promisify(client.set).bind(client);
+
+
+/**
+ * Db
+ */
+const uri = 'mongodb+srv://server:easypass@cluster0.jivtk.mongodb.net/users';
+mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true }).then(() => console.log('DB Connection Successfull'))
+  .catch((err) => {
+    console.error(err);
+  });
+mongoose.connection.on('connected', () => {
+  console.log('db connected');
+});
+
+mongoose.connection.on('error', (error) => {
+  console.log('Error while connecting to mongodb database:', error);
+});
+mongoose.connection.once('open', () => {
+  console.log('Successfully connected to mongodb database');
+});
+
+const UserSchema = new mongoose.Schema({
+  username: String,
+  hash: String,
+});
+const RequestSchema = new mongoose.Schema({
+  from: String,
+  to: String,
+  status: Number,
+});
+const regTokens = new mongoose.Schema({
+  username: String,
+  registrationToken: String,
+  secretKey: String,
+});
+const Token = mongoose.model('Token', regTokens);
+const User = mongoose.model('User', UserSchema);
+const Request = mongoose.model('Profile', RequestSchema);
+
+/**
+ * Firebase
+ */
+const serviceAccount = require('./binge-18543-firebase-adminsdk-je19s-d192ebe321.json');
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: 'https://binge-18543.firebaseio.com',
+});
+
+/**
+ * Passport Imports
+ */
+const { ExtractJwt, Strategy } = require('passport-jwt');
+const passport = require('passport');
+const fs = require('fs');
+const jsonwebtoken = require('jsonwebtoken');
+
+const pathToPUBKey = path.join(__dirname, 'keys', 'public.pem');
+const pathToPRIVKey = path.join(__dirname, 'keys', 'private.pem');
+const PUB_KEY = fs.readFileSync(pathToPUBKey, 'utf8');
+const PRIV_KEY = fs.readFileSync(pathToPRIVKey, 'utf8');
+
+function issueJWT(user) {
+  const { _id } = user;
+  const expiresIn = '1d';
+
+  const payload = {
+    sub: _id,
+    iat: Date.now(),
+  };
+
+  const signedToken = jsonwebtoken.sign(payload, PRIV_KEY, { expiresIn, algorithm: 'RS256' });
+
+  return {
+    token: `Bearer ${signedToken}`,
+    expires: expiresIn,
+  };
+}
+
+const options = {
+  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+  secretOrKey: PUB_KEY,
+  algorithms: ['RS256'],
+};
+passport.use(new Strategy(options, ((jwtPayload, done) => {
+  // Since we are here, the JWT is valid!
+
+  // We will assign the `sub` property on the JWT to the database ID of user
+  User.findOne({ _id: jwtPayload.sub }, (err, user) => {
+    // This flow look familiar?  It is the same as when we implemented
+    // the `passport-local` strategy
+    if (err) {
+      return done(err, false);
+    }
+    if (user) {
+      // Since we are here, the JWT is valid and our user is valid, so we are authorized!
+      return done(null, user);
+    }
+    return done(null, false);
+  });
+})));
+
 
 const port = process.env.PORT || 3000;
+
+/**
+ * Utils
+ */
+function sendNotificationByToken(title, msg, tokenDoc) {
+  console.log('In sendNotificationByToken');
+  const paddedTitle = `DecryptedBingeBox: ${title}`;
+  const paddedBody = `DecryptedBingeBox: ${msg}`;
+  const cipherTitle = AES.encrypt(paddedTitle, tokenDoc.secretKey).toString();
+  const cipherBody = AES.encrypt(paddedBody, tokenDoc.secretKey).toString();
+  const message = {
+    data: {
+      title: cipherTitle,
+      body: cipherBody,
+    },
+    token: tokenDoc.registrationToken,
+  };
+  admin.messaging().send(message)
+    .then((response) => {
+    // Response is a message ID string.
+      console.log('Successfully sent message:', response);
+    })
+    .catch((error) => {
+      console.log('Error sending message:', error);
+    });
+}
+
+function validPassword(password, hash) {
+  return bcrypt.compare(password, hash);
+}
+
+function genPassword(password) {
+  return bcrypt.hash(password, 10);
+}
 
 process.on('unhandledRejection', (err) => {
   console.error(err);
 });
 
+const createAccountLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour window
+  max: 20, // start blocking after 5 requests
+  message:
+    'Too many accounts created from this IP, please try again after an hour',
+});
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors());
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(publicDir, 'index.html'));
+});
+
+app.post('/login', (req, res, next) => {
+  if (req.body.username && req.body.password) {
+    User.findOne({ username: req.body.username })
+      .then((user) => {
+        console.log(user);
+        if (!user) {
+          return res.status(401).json({ success: false, msg: 'could not find user' });
+        }
+        // Function defined at bottom of app.js
+        validPassword(req.body.password, user.hash).then((isValid) => {
+          if (isValid) {
+            const tokenObject = issueJWT(user);
+            return res.status(200).json({ success: true, token: tokenObject.token, expiresIn: tokenObject.expires });
+          }
+          return res.status(401).json({ success: false, msg: 'you entered the wrong password' });
+        });
+      })
+      .catch((err) => {
+        next(err);
+      });
+  } else {
+    res.status(400).json({ success: false, msg: 'Malformed request' });
+  }
+});
+
+app.post('/register', createAccountLimiter, (req, res, next) => {
+  console.log(req.body);
+  if (req.body.password && req.body.username) {
+    genPassword(req.body.password).then((hash) => {
+      console.log(hash);
+      const newUser = new User({
+        username: req.body.username,
+        hash,
+      });
+      User.findOne({ username: req.body.username })
+        .then((user) => {
+          if (user) {
+            return res.json({ success: false, msg: 'User already exists!' });
+          }
+          newUser.save()
+            .then((savedUser) => {
+              console.log('Success register');
+              console.log(savedUser);
+              const tokenObject = issueJWT(savedUser);
+              return res.status(200).json({ success: true, token: tokenObject.token, expiresIn: tokenObject.expires });
+            })
+            .catch((err) => next(err));
+        });
+    });
+  } else {
+    res.status(400).json({ success: false, msg: 'Malformed request' });
+  }
+});
+
+app.post('/sendRequest', passport.authenticate('jwt', { session: false }), (req, res) => {
+  if (req.body.contactToAdd) {
+    if (req.body.contactToAdd === req.user.username) {
+      return res.status(200).json({ success: false, msg: 'Cannot add yourself' });
+    }
+    User.findOne({ username: req.body.contactToAdd })
+      .then((user) => {
+        if (!user) {
+          return res.status(200).json({ success: false, msg: 'Could not find user' });
+        }
+        if (req.user.username !== req.body.contactToAdd) {
+          Request.findOne({
+            $or:
+            [
+              { from: req.body.contactToAdd, to: req.user.username },
+              { to: req.body.contactToAdd, from: req.user.username },
+            ],
+          }).then((request) => {
+            if (request) {
+              if (request.status === 1) {
+                return res.status(200).json({ success: true, msg: 'Already Friends' });
+              } if (request.status === 0) {
+                if (request.to === req.user.username) {
+                  Request.findOneAndUpdate({ to: req.user.username, from: req.body.contactToAdd }, { status: 1 });
+                  return res.status(200).json({ success: true, msg: 'Friends' });
+                }
+                return res.status(200).json({ success: true, msg: 'Already Sent Request' });
+              } if (request.status === -1) {
+                return res.status(200).json({ success: true, msg: 'Already Sent Request' });
+              }
+            } else {
+              const newRequest = new Request({
+                from: req.user.username,
+                to: req.body.contactToAdd,
+                status: 0,
+              });
+              newRequest.save().then(() => {
+                Token.find({ username: req.body.contactToAdd }, (err, res) => {
+                  if (err) { throw err; }
+                  res.forEach(sendNotificationByToken.bind(this, 'New friend request', `${req.user.username} sent you friend request`));
+                });
+              });
+              return res.status(200).json({ success: true, msg: 'Sent Request' });
+            }
+          });
+        } else {
+          return res.status(200).json({ success: false, msg: 'Cannot send request to yourself' });
+        }
+      });
+    console.log(req.user);
+  }
+});
+
+app.post('/logout', passport.authenticate('jwt', { session: false }), (req, res) => {
+  Token.findOneAndRemove({ username: req.user.username, secretKey: req.headers.authorization.slice('Bearer '.length) }, { useFindAndModify: false }).then((res) => {
+    console.log(`Succesfully removed ${req.user.username}`);
+    console.log(res);
+  });
+  res.status(200).json();
+});
+
+app.post('/registerFCMToken', passport.authenticate('jwt', { session: false }), (req, res) => {
+  if (req.body.registrationToken
+    && typeof req.body.registrationToken === 'string'
+    && req.body.registrationToken.length > 0) {
+    console.log(req.headers.authorization.slice('Bearer '.length));
+    Token.findOneAndUpdate({ username: req.user.username, registrationToken: req.body.registrationToken }, {
+      username: req.user.username,
+      registrationToken: req.body.registrationToken,
+      secretKey: req.headers.authorization.slice('Bearer '.length),
+    }, { upsert: true, useFindAndModify: false }).then((res2) => {
+      console.log(`Registered token ${req.body.registrationToken}`);
+      console.log(res2);
+    });
+    return res.status(200).json({ success: true });
+  }
+  return res.status(400).json({ success: false });
 });
 
 app.use('/', express.static(publicDir));
