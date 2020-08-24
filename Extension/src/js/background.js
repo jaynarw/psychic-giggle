@@ -12,7 +12,7 @@ function sendTokenToServer(registrationToken) {
   console.log('sending token to sv');
   chrome.storage.local.get(['token'], (result) => {
     if (result.token) {
-      superagent.post('http://localhost:3000/registerFCMToken')
+      superagent.post('https://0297f2e82338.ngrok.io/registerFCMToken')
         .send({
           registrationToken,
         })
