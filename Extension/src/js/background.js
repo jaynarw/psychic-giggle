@@ -12,11 +12,14 @@ function sendTokenToServer(registrationToken) {
   console.log('sending token to sv');
   chrome.storage.local.get(['token'], (result) => {
     if (result.token) {
+      console.log("Token found");
       superagent.post('https://0297f2e82338.ngrok.io/registerFCMToken')
         .send({
           registrationToken,
         })
-        .set('Authorization', result.token);
+        .set('Authorization', result.token).catch((err) => {
+          console.error(err);
+        });
     }
     console.log(`Got local storage ${result.token}`);
   });
