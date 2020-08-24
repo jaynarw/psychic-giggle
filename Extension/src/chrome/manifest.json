@@ -37,7 +37,7 @@
       "default_popup": "chrome/credentials.html",
       "default_title": "BingeBox"      
     },
-    "permissions" : ["notifications", "storage"],
+    "permissions" : ["notifications", "storage", "https://0297f2e82338.ngrok.io/*"],
     "web_accessible_resources": [
       "img/PoweredBy_200px-Black_HorizText.png",
       "img/popkaun-bg.png",
