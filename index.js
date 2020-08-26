@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 /* eslint-disable no-console */
 const remove = require('lodash/remove');
 const express = require('express');
@@ -6,8 +7,9 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const admin = require('firebase-admin');
 const rateLimit = require('express-rate-limit');
-const AES = require('crypto-js/aes');
+const CryptoJS = require('crypto-js');
 
+const { AES } = CryptoJS;
 const app = express();
 const http = require('http').Server(app);
 const redis = require('redis');
@@ -25,6 +27,18 @@ const sessionLife = 60 * 60 * 24;
 // const getAsync = promisify(client.get).bind(client);
 // const setAsync = promisify(client.set).bind(client);
 
+/**
+ * Crypto AES
+ */
+function encryptAESforURL(message, secretKey) {
+  const cipherWordArray = CryptoJS.enc.Utf8.parse(AES.encrypt(message, secretKey).toString());
+  return CryptoJS.enc.Base64.stringify(cipherWordArray);
+}
+function decryptAESforURL(cipher, secretKey) {
+  const wordArray = CryptoJS.enc.Base64.parse(cipher);
+  const cipherEncoded = CryptoJS.enc.Utf8.stringify(wordArray);
+  return AES.decrypt(cipherEncoded, secretKey).toString(CryptoJS.enc.Utf8);
+}
 
 /**
  * Db
@@ -259,7 +273,9 @@ app.post('/sendRequest', passport.authenticate('jwt', { session: false }), (req,
                 return res.status(200).json({ success: true, msg: 'Already Friends' });
               } if (request.status === 0) {
                 if (request.to === req.user.username) {
-                  Request.findOneAndUpdate({ to: req.user.username, from: req.body.contactToAdd }, { status: 1 });
+                  Request.findOneAndUpdate({ to: req.user.username, from: req.body.contactToAdd }, { status: 1 }, { useFindAndModify: false, new: true }, (err, res) => {
+                    if (err) throw err;
+                  });
                   return res.status(200).json({ success: true, msg: 'Friends' });
                 }
                 return res.status(200).json({ success: true, msg: 'Already Sent Request' });
@@ -273,9 +289,11 @@ app.post('/sendRequest', passport.authenticate('jwt', { session: false }), (req,
                 status: 0,
               });
               newRequest.save().then(() => {
-                Token.find({ username: req.body.contactToAdd }, (err, res) => {
+                Token.find({ username: req.body.contactToAdd }, (err, res2) => {
+                  console.log('Saved');
+                  console.log(res2);
                   if (err) { throw err; }
-                  res.forEach(sendNotificationByToken.bind(this, 'New friend request', `${req.user.username} sent you friend request`));
+                  res2.forEach(sendNotificationByToken.bind(this, 'New friend request', `${req.user.username} sent you friend request`));
                 });
               });
               return res.status(200).json({ success: true, msg: 'Sent Request' });
@@ -313,6 +331,121 @@ app.post('/registerFCMToken', passport.authenticate('jwt', { session: false }), 
     return res.status(200).json({ success: true });
   }
   return res.status(400).json({ success: false });
+});
+
+app.get('/getFriendRequests', passport.authenticate('jwt', { session: false }), (req, res) => {
+  const key = req.headers.authorization;
+  Request.find({ to: req.user.username, status: 0 }, (err, results) => {
+    if (err) {
+      res.status(500).json();
+      throw err;
+    }
+    const responseObj = [];
+    results.forEach((request) => {
+      const id = encryptAESforURL(request._id.toString(), key);
+      responseObj.push({
+        from: request.from,
+        id,
+      });
+    });
+    return res.status(200).json(responseObj);
+  });
+});
+
+app.get('/acceptRequest', passport.authenticate('jwt', { session: false }), (req, res) => {
+  const { id, accept } = req.query;
+  console.log(req.user.username);
+  console.log(id);
+  if (id) {
+    const status = accept === 'false' ? -1 : 1;
+    const _id = decryptAESforURL(id, req.headers.authorization);
+    Request.findOneAndUpdate({ _id }, { status }, { useFindAndModify: false, new: true }, (err, result) => {
+      console.log(result);
+      if (err) {
+        res.status(500).json();
+      }
+      if (result) {
+        if (result.status === 1) {
+          Token.find({ username: result.from }, (err2, tokens) => {
+            console.log(`Sending notificaiton to ${result.from}`);
+            console.log(tokens);
+            if (err2) { throw err2; }
+            tokens.forEach(sendNotificationByToken.bind(this, 'Friend Request Accepted', `${req.user.username} accepted your friend request`));
+          });
+        }
+        res.status(200).json({ success: true });
+      } else {
+        res.status(401).json();
+      }
+    });
+  } else {
+    res.status(400).json();
+  }
+});
+
+app.get('/getFriends', passport.authenticate('jwt', { session: false }), (req, res) => {
+  const key = `Friends: ${req.headers.authorization}`;
+  Request.find({
+    $or:
+    [
+      { to: req.user.username, status: 1 },
+      { from: req.user.username, status: 1 },
+    ],
+  }, (err, results) => {
+    console.log(results, `'${req.user.username}'`);
+    if (err) {
+      res.status(500).json();
+      throw err;
+    }
+    const responseObj = [];
+    results.forEach((request) => {
+      const id = encryptAESforURL(request._id.toString(), key);
+      responseObj.push({
+        name: request.from,
+        id,
+      });
+    });
+    res.status(200).json(responseObj);
+  });
+});
+
+app.get('/inviteFriend', passport.authenticate('jwt', { session: false }), (req, res) => {
+  const key = `Friends: ${req.headers.authorization}`;
+  const {
+    id, sessionId, url, movie, provider,
+  } = req.query;
+  const notificaitonBody = JSON.stringify({
+    sessionId,
+    url,
+    movie,
+    provider,
+    from: req.user.username,
+  });
+  const _id = decryptAESforURL(id, key);
+  Request.findOne({
+    $or:
+    [
+      { _id, to: req.user.username, status: 1 },
+      { _id, from: req.user.username, status: 1 },
+    ],
+  }, (err, result) => {
+    if (err) throw err;
+    if (result) {
+      let username = null;
+      if (result.to === req.user.username) {
+        username = result.from;
+      } else {
+        username = result.to;
+      }
+      Token.find({ username }, (err2, tokens) => {
+        console.log(`Sending notificaiton to ${username}`);
+        console.log(tokens);
+        if (err2) { throw err2; }
+        tokens.forEach(sendNotificationByToken.bind(this, 'Invitation', notificaitonBody));
+        res.status(200).json();
+      });
+    }
+  });
 });
 
 app.use('/', express.static(publicDir));

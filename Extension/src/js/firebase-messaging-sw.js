@@ -42,6 +42,11 @@ messaging.setBackgroundMessageHandler((payload) => {
         const notificationOptions = {
           body: body.slice('DecryptedBingeBox: '.length),
         };
+        if (notificationTitle === 'Invitation') {
+          const inviteData = JSON.parse(notificationOptions.body);
+          notificationOptions.body = `${inviteData.from} invites you to watch ${inviteData.movie} on ${inviteData.provider}`;
+          channel.postMessage({ type: 'INVITATION', body: inviteData });
+        }
         self.registration.showNotification(notificationTitle,
           notificationOptions);
       }

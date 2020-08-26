@@ -15,18 +15,66 @@ class PopupApp extends React.Component {
       loggedInUser: null,
       contacts: null,
       addContactMsg: '',
+      friendRequests: [],
+      friends: [],
+      invites: [],
+      nowPlayingData: null,
     };
   }
 
   componentDidMount() {
-    chrome.storage.local.get(['token', 'username'], (result) => {
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+      for (const key in changes) {
+        if (key === 'invites') {
+          const storageChange = changes[key];
+          console.log('Storage key "%s" in namespace "%s" changed. '
+                    + 'Old value was "%s", new value is "%s".',
+          key,
+          namespace,
+          storageChange.oldValue,
+          storageChange.newValue);
+          this.setState({ invites: storageChange.newValue });
+        }
+      }
+    });
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, { type: 'existence' }, (response) => {
+        if (response.type === 'pain') {
+          this.setState({ nowPlayingData: response });
+        }
+      });
+    });
+    chrome.storage.local.get(['token', 'username', 'invites'], (result) => {
       if (result.token) {
         this.setState({ token: result.token });
+        this.updateFriendRequests();
+        this.updateFriends();
       }
       if (result.username) {
         this.setState({ loggedInUser: result.username });
       }
+      if (result.invites) {
+        this.setState({ invites: result.invites });
+      }
     });
+  }
+
+  updateFriendRequests() {
+    const { token } = { ...this.state };
+    superagent.get('https://8efcb897b030.ngrok.io/getFriendRequests')
+      .set('Authorization', token)
+      .then((res) => {
+        this.setState({ friendRequests: JSON.parse(res.text) });
+      });
+  }
+
+  updateFriends() {
+    const { token } = { ...this.state };
+    superagent.get('https://8efcb897b030.ngrok.io/getFriends')
+      .set('Authorization', token)
+      .then((res) => {
+        this.setState({ friends: JSON.parse(res.text) });
+      });
   }
 
   handleInput(e) {
@@ -38,7 +86,7 @@ class PopupApp extends React.Component {
   loginHandler() {
     const { username, password } = { ...this.state };
     if (username.length > 0 && password.length > 0) {
-      superagent.post('https://0297f2e82338.ngrok.io/login').send({
+      superagent.post('https://8efcb897b030.ngrok.io/login').send({
         username,
         password,
       }).ok((res) => res.status < 500).then((res) => {
@@ -58,6 +106,23 @@ class PopupApp extends React.Component {
     }
   }
 
+  handleAcceptRequest(e) {
+    const { token } = { ...this.state };
+    const { target } = e;
+    const id = target.getAttribute('data-attr');
+    const queryObj = { id };
+    if (target.textContent === 'Decline') {
+      queryObj.accept = 'false';
+    }
+    superagent.get('https://8efcb897b030.ngrok.io/acceptRequest')
+      .query(queryObj)
+      .set('Authorization', token)
+      .then((res) => {
+        this.updateFriendRequests();
+        this.updateFriends();
+      });
+  }
+
   hoverLogo() {
     const ref = document.querySelector('#logo-chat');
     ref.classList.remove('animated');
@@ -69,7 +134,7 @@ class PopupApp extends React.Component {
     const { token } = { ...this.state };
     chrome.storage.local.get(['regToken'], (result) => {
       if (result.regToken) {
-        superagent.post('https://0297f2e82338.ngrok.io/logout')
+        superagent.post('https://8efcb897b030.ngrok.io/logout')
           .send({ regToken: result.regToken })
           .set('Authorization', token)
           .then((res) => {
@@ -80,7 +145,7 @@ class PopupApp extends React.Component {
             }
           });
       } else {
-        superagent.post('https://0297f2e82338.ngrok.io/logout')
+        superagent.post('https://8efcb897b030.ngrok.io/logout')
           .set('Authorization', token)
           .then((res) => {
             if (res.ok) {
@@ -96,7 +161,7 @@ class PopupApp extends React.Component {
   addContact() {
     const { addContact, token } = { ...this.state };
     if (addContact.length > 0) {
-      superagent.post('https://0297f2e82338.ngrok.io/sendRequest').send({
+      superagent.post('https://8efcb897b030.ngrok.io/sendRequest').send({
         contactToAdd: addContact,
       }).set('Authorization', token).ok((res) => res.status < 500)
         .then((res) => {
@@ -109,9 +174,33 @@ class PopupApp extends React.Component {
     }
   }
 
+  acceptInvitation(inviteData) {
+    const { loggedInUser } = { ...this.state };
+    chrome.tabs.create({ url: `${inviteData.url}?sessionId=${inviteData.sessionId}&nickname=${loggedInUser}` });
+  }
+
+  sendInvite(e) {
+    const { token, nowPlayingData } = { ...this.state };
+    const { target } = e;
+    const id = target.getAttribute('data-attr');
+    const queryObj = {
+      id,
+      url: nowPlayingData.url,
+      movie: nowPlayingData.movie,
+      sessionId: nowPlayingData.sessionId,
+      provider: nowPlayingData.provider,
+    };
+    superagent.get('https://8efcb897b030.ngrok.io/inviteFriend')
+      .query(queryObj)
+      .set('Authorization', token)
+      .then((res) => {
+        console.log('sent');
+      });
+  }
+
   render() {
     const {
-      token, username, password, loginError, loggedInUser, addContact, contacts, addContactMsg,
+      token, username, password, loginError, loggedInUser, addContact, contacts, addContactMsg, friendRequests, friends, invites, nowPlayingData,
     } = { ...this.state };
     return (
       <>
@@ -160,6 +249,34 @@ class PopupApp extends React.Component {
         <>
           <div>
             {`Welcome ${loggedInUser}!`}
+          </div>
+          <div>
+            {invites.length > 0 ? 'Invites: ' : 'No invites.. :('}
+            {invites.map((inviteData, ind) => (
+              <div key={ind}>
+                {`${inviteData.from} invites you to watch ${inviteData.movie} on ${inviteData.provider}`}
+                <button type="button" onClick={() => this.acceptInvitation(inviteData)}>Accept</button>
+              </div>
+            ))}
+          </div>
+          <div>
+            {friendRequests.length > 0 ? 'Requests:' : 'No new friend requests' }
+            {friendRequests.map((request) => (
+              <div key={request.id}>
+                <span>{request.from}</span>
+                <button type="button" data-attr={request.id} onClick={(e) => this.handleAcceptRequest(e)}>Accept</button>
+                <button type="button" data-attr={request.id} onClick={(e) => this.handleAcceptRequest(e)}>Decline</button>
+              </div>
+            ))}
+          </div>
+          <div>
+            {friends.length > 0 ? 'Friends:' : 'No friends' }
+            {friends.map((request) => (
+              <div key={request.id}>
+                <span>{request.name}</span>
+                {nowPlayingData && <button type="button" data-attr={request.id} onClick={(e) => this.sendInvite(e)}>Invite</button>}
+              </div>
+            ))}
           </div>
           <div>
             {addContactMsg}

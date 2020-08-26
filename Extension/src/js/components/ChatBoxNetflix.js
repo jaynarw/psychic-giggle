@@ -93,13 +93,39 @@ class ChatBox extends React.Component {
   }
 
   componentDidMount() {
-    setTimeout(() => {
-      const container = document.getElementById('psychick');
-      container.classList.remove('centered-binge');
+    const url = new URL(window.location.href);
+    const search = new URLSearchParams(url.search);
+    const sessionId = search.get('sessionId');
+    const nickname = search.get('nickname');
+    if (sessionId && sessionId.length === 6 && nickname) {
+      this.setState({
+        joinSessionInput: sessionId, nicknameInput: nickname,
+      }, this.joinSessionHandler);
+    } else {
       setTimeout(() => {
-        this.setState({ showForm: true });
+        const container = document.getElementById('psychick');
+        container.classList.remove('centered-binge');
+        setTimeout(() => {
+          this.setState({ showForm: true });
+        }, 500);
       }, 500);
-    }, 500);
+    }
+    chrome.runtime.onMessage.addListener((res, sender, sendResponse) => {
+      console.log('h');
+      if (res.type === 'existence') {
+        console.log('ii');
+        const { currentSession, nowPlaying } = { ...this.state };
+        if (currentSession) {
+          sendResponse({
+            type: 'pain',
+            url: window.location.href.split('?')[0],
+            provider: 'Netflix',
+            sessionId: currentSession,
+            movie: nowPlaying,
+          });
+        }
+      }
+    });
     const buffer = document.querySelector('.nf-player-container');
     if (this.video) {
       this.video.addEventListener('pause', this.handleVideoEvents);

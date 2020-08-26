@@ -2,6 +2,12 @@
 // import firebase from 'firebase';
 import superagent from 'superagent';
 
+let notificationNumber = 0;
+
+function setBadgeText() {
+  chrome.browserAction.setBadgeText({ text: notificationNumber === 0 ? '' : `${notificationNumber}` });
+}
+
 chrome.runtime.onInstalled.addListener((object) => {
   chrome.tabs.create({ url: 'https://www.bingebox.live' }, () => {
     console.log('Installed');
@@ -12,8 +18,8 @@ function sendTokenToServer(registrationToken) {
   console.log('sending token to sv');
   chrome.storage.local.get(['token'], (result) => {
     if (result.token) {
-      console.log("Token found");
-      superagent.post('https://0297f2e82338.ngrok.io/registerFCMToken')
+      console.log('Token found');
+      superagent.post('https://8efcb897b030.ngrok.io/registerFCMToken')
         .send({
           registrationToken,
         })
@@ -46,9 +52,20 @@ channel.addEventListener('message', (e) => {
   console.log('Received from sw');
   const { data } = e;
   if (data.type && data.type === 'GET TOKEN') {
+    chrome.runtime.sendMessage({ type: 'Update Friend Requests' });
+    notificationNumber++;
+    setBadgeText();
     chrome.storage.local.get(['token'], (result) => {
       if (result.token) {
         channel.postMessage({ type: 'SET TOKEN', token: result.token });
+      }
+    });
+  } if (data.type && data.type === 'INVITATION') {
+    chrome.storage.local.get(['invites'], (result) => {
+      if (result.invites) {
+        chrome.storage.local.set({ invites: [data.body, ...result.invites] });
+      } else {
+        chrome.storage.local.set({ invites: [data.body] });
       }
     });
   }
@@ -60,27 +77,36 @@ channel.addEventListener('message', (e) => {
 //   console.log('Denied Permission');
 // });
 chrome.runtime.onMessage.addListener((req) => {
-  if (req.type === 'LoggedIn') {
-    console.log('Received LogIn');
-    messaging.getToken()
-      .then((token) => {
-        console.log(token);
-        sendTokenToServer(token);
-      });
-    console.log('Hi');
+  switch (req.type) {
+    case 'LoggedIn': {
+      console.log('Received LogIn');
+      messaging.getToken()
+        .then((token) => {
+          console.log(token);
+          sendTokenToServer(token);
+        });
+      console.log('Hi');
 
-    messaging.onTokenRefresh(() => {
-      messaging.getToken().then((refreshedToken) => {
-        console.log('Token refreshed');
-        sendTokenToServer(refreshedToken);
-      }).catch((err) => {
-        console.log('Unable to retrieve refreshed token ', err);
-        showToken('Unable to retrieve refreshed token ', err);
+      messaging.onTokenRefresh(() => {
+        messaging.getToken().then((refreshedToken) => {
+          console.log('Token refreshed');
+          sendTokenToServer(refreshedToken);
+        }).catch((err) => {
+          console.log('Unable to retrieve refreshed token ', err);
+          showToken('Unable to retrieve refreshed token ', err);
+        });
       });
-    });
-    messaging.onMessage((payload) => {
-      console.log(`Message received. ${JSON.stringify(payload)}`);
-      // ...
-    });
+      messaging.onMessage((payload) => {
+        console.log(`Message received. ${JSON.stringify(payload)}`);
+        // ...
+      });
+      break;
+    }
+    case 'Clear Notification': {
+      notificationNumber = 0;
+      setBadgeText();
+      break;
+    }
+    default: // Do nothing
   }
 });
