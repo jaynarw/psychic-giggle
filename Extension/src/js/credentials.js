@@ -2,6 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './components/popup.css';
 import superagent from 'superagent';
+import { CSSTransition } from 'react-transition-group';
+import initializeWaves from './waves';
 
 class PopupApp extends React.Component {
   constructor(props) {
@@ -15,14 +17,19 @@ class PopupApp extends React.Component {
       loggedInUser: null,
       contacts: null,
       addContactMsg: '',
-      friendRequests: [],
-      friends: [],
-      invites: [],
+      friendRequests: null,
+      friends: null,
+      invites: null,
       nowPlayingData: null,
+      wavesComplete: false,
     };
+    this.waves = null;
   }
 
   componentDidMount() {
+    this.waves = initializeWaves(() => {
+      this.setState({ wavesComplete: true });
+    });
     chrome.storage.onChanged.addListener((changes, namespace) => {
       for (const key in changes) {
         if (key === 'invites') {
@@ -46,7 +53,9 @@ class PopupApp extends React.Component {
     });
     chrome.storage.local.get(['token', 'username', 'invites'], (result) => {
       if (result.token) {
-        this.setState({ token: result.token });
+        document.body.removeChild(document.querySelector('canvas'));
+        document.body.style.backgroundColor = '#121212';
+        this.setState({ token: result.token, wavesComplete: true });
         this.updateFriendRequests();
         this.updateFriends();
       }
@@ -92,10 +101,14 @@ class PopupApp extends React.Component {
       }).ok((res) => res.status < 500).then((res) => {
         if (typeof res.body === 'object') {
           if (res.body.success) {
+            this.waves.submittedForm = true;
             chrome.storage.local.set({ token: res.body.token, username }, () => {
               chrome.runtime.sendMessage({ type: 'LoggedIn' });
               this.setState({
                 token: res.body.token, loggedInUser: username, username: '', password: '',
+              }, () => {
+                this.updateFriendRequests();
+                this.updateFriends();
               });
             });
           } else {
@@ -140,7 +153,12 @@ class PopupApp extends React.Component {
           .then((res) => {
             if (res.ok) {
               chrome.storage.local.remove(['token', 'username', 'regToken'], () => {
-                this.setState({ token: null, loggedInUser: null });
+                this.setState({ token: null, loggedInUser: null, wavesComplete: false }, () => {
+                  document.body.style.backgroundColor = '#9CAAE4';
+                  this.waves = initializeWaves(() => {
+                    this.setState({ wavesComplete: true });
+                  });
+                });
               });
             }
           });
@@ -150,7 +168,12 @@ class PopupApp extends React.Component {
           .then((res) => {
             if (res.ok) {
               chrome.storage.local.remove(['token', 'username', 'regToken'], () => {
-                this.setState({ token: null, loggedInUser: null });
+                this.setState({ token: null, loggedInUser: null, wavesComplete: false }, () => {
+                  document.body.style.backgroundColor = '#9CAAE4';
+                  this.waves = initializeWaves(() => {
+                    this.setState({ wavesComplete: true });
+                  });
+                });
               });
             }
           });
@@ -188,7 +211,6 @@ class PopupApp extends React.Component {
       url: nowPlayingData.url,
       movie: nowPlayingData.movie,
       sessionId: nowPlayingData.sessionId,
-      provider: nowPlayingData.provider,
     };
     superagent.get('https://8efcb897b030.ngrok.io/inviteFriend')
       .query(queryObj)
@@ -200,11 +222,16 @@ class PopupApp extends React.Component {
 
   render() {
     const {
-      token, username, password, loginError, loggedInUser, addContact, contacts, addContactMsg, friendRequests, friends, invites, nowPlayingData,
+      token, username, password, loginError, loggedInUser, addContact, contacts, addContactMsg, friendRequests, friends, invites, nowPlayingData, wavesComplete,
     } = { ...this.state };
+    const waves = document.querySelector('canvas');
+    if (waves) {
+      waves.height = window.innerHeight;
+    }
+    console.log(friends && friends.length > 0 ? 'Friends:' : 'No friends');
     return (
       <>
-        <div>
+        <div className="popup-logo">
           <div className="logo-bingebox animated logo-chat" id="logo-chat" onMouseEnter={() => this.hoverLogo()}>
             <svg className="popcorn-logo-chat" version="1.0" xmlns="http://www.w3.org/2000/svg" width="298px" height="472px" viewBox="0 0 2980 4720" preserveAspectRatio="xMidYMid meet">
               <g id="layer101" fill="rgba(255,255,255,0.88)" stroke="none">
@@ -218,75 +245,104 @@ class PopupApp extends React.Component {
                 <path d="M111 993 l-73 -4 4 -37 c4 -28 0 -44 -19 -65 -16 -20 -23 -41 -23 -72 0 -36 5 -47 32 -70 27 -23 39 -26 75 -22 27 3 46 0 53 -8 5 -6 28 -20 49 -30 30 -13 41 -24 45 -49 7 -36 44 -79 88 -102 22 -12 47 -15 87 -11 47 4 65 0 111 -22 48 -23 68 -26 162 -27 l107 -1 27 -32 c32 -38 94 -75 154 -92 l45 -12 -32 -9 c-112 -30 -89 -198 27 -198 37 0 49 -7 97 -50 39 -36 70 -55 111 -66 66 -20 162 -15 211 10 26 14 39 15 63 7 100 -35 208 21 233 120 l7 27 46 -15 c64 -20 175 -13 228 15 29 15 51 19 81 15 85 -11 151 54 140 139 -3 22 -15 50 -26 62 -12 12 -21 29 -21 38 0 13 6 14 53 1 65 -18 146 -10 207 19 62 30 133 104 155 161 22 58 51 64 79 16 29 -50 109 -74 159 -48 69 36 97 100 73 170 -14 39 -13 45 6 83 11 22 23 69 26 103 l5 63 -1389 -2 c-764 -1 -1422 -4 -1463 -5z" />
               </g>
             </svg>
-            <span className="binge">binge</span>
-            <span className="box">box</span>
+            <span className="binge">bingebox</span>
           </div>
         </div>
-        {!token
+        {!wavesComplete
           && (
           <>
             <div className="centered-flex">
-              <div className="card-psychic">
+              <div className="card-psychic BoxShadowHelper-2">
                 <div className="error-desc">{loginError}</div>
                 <label htmlFor="username">Username</label>
                 <input name="username" className="username-input" id="username" type="text" value={username} required onChange={(e) => this.handleInput(e)} />
                 <label htmlFor="password">Password</label>
                 <input name="password" className="username-input" id="password" type="password" value={password} required onChange={(e) => this.handleInput(e)} />
                 <button type="button" className="session-button" onClick={() => this.loginHandler()}>Login</button>
+                <div className="or-divider">Or</div>
+                <button type="button" className="outlined-button">Signup</button>
               </div>
             </div>
-            <div className="centered-flex">
-              <div className="or-divider" style={{ width: '90%', margin: '0 0 8px 0' }}>Or</div>
+            {/* <div className="centered-flex">
+
             </div>
 
             <div className="centered-flex">
-              <button type="button" className="outlined-button" style={{ width: '90%' }}>Signup</button>
-            </div>
+
+            </div> */}
 
           </>
           )}
-        {token && (
-        <>
+        {/* {wavesComplete && ( */}
+        <CSSTransition
+          in={wavesComplete}
+          timeout={{ enter: 1000, exit: 0 }}
+          classNames="my-node"
+          unmountOnExit
+          // onExited= {() => }
+        >
           <div>
-            {`Welcome ${loggedInUser}!`}
+            <div>
+              {`Welcome ${loggedInUser}!`}
+            </div>
+            <div>
+              {invites && (invites.length > 0 ? 'Invites: ' : 'No invites.. :(')}
+              {invites && invites.map((inviteData, ind) => (
+                <div key={inviteData.id}>
+                  {`${inviteData.from} invites you to watch ${inviteData.movie} on ${inviteData.provider}`}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updatedInvites = [...invites];
+                      updatedInvites.splice(ind);
+                      chrome.storage.local.set({ invites: updatedInvites });
+                      this.acceptInvitation(inviteData);
+                    }}
+                  >
+                    Accept
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updatedInvites = [...invites];
+                      updatedInvites.splice(ind);
+                      chrome.storage.local.set({ invites: updatedInvites });
+                    }}
+                  >
+                    Reject
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div>
+              {friendRequests && (friendRequests.length > 0 ? 'Requests:' : 'No new friend requests') }
+              {friendRequests && friendRequests.map((request) => (
+                <div key={request.id}>
+                  <span>{request.from}</span>
+                  <button type="button" data-attr={request.id} onClick={(e) => this.handleAcceptRequest(e)}>Accept</button>
+                  <button type="button" data-attr={request.id} onClick={(e) => this.handleAcceptRequest(e)}>Decline</button>
+                </div>
+              ))}
+            </div>
+            <div>
+              {friends && (friends.length > 0 ? 'Friends:' : 'No friends') }
+              {friends && friends.map((request) => (
+                <div key={request.id}>
+                  <span>{request.name}</span>
+                  {nowPlayingData && <button type="button" data-attr={request.id} onClick={(e) => this.sendInvite(e)}>Invite</button>}
+                </div>
+              ))}
+            </div>
+            <div>
+              {addContactMsg}
+              <input type="text" name="addContact" value={addContact} onChange={(e) => this.handleInput(e)} />
+              <button type="button" onClick={() => this.addContact()}>Add to Contact</button>
+            </div>
+            <div>{contacts && contacts.map((contact) => (<li>{contact}</li>))}</div>
+            <button type="button" onClick={() => this.logoutUser()}>Logout</button>
           </div>
-          <div>
-            {invites.length > 0 ? 'Invites: ' : 'No invites.. :('}
-            {invites.map((inviteData, ind) => (
-              <div key={ind}>
-                {`${inviteData.from} invites you to watch ${inviteData.movie} on ${inviteData.provider}`}
-                <button type="button" onClick={() => this.acceptInvitation(inviteData)}>Accept</button>
-              </div>
-            ))}
-          </div>
-          <div>
-            {friendRequests.length > 0 ? 'Requests:' : 'No new friend requests' }
-            {friendRequests.map((request) => (
-              <div key={request.id}>
-                <span>{request.from}</span>
-                <button type="button" data-attr={request.id} onClick={(e) => this.handleAcceptRequest(e)}>Accept</button>
-                <button type="button" data-attr={request.id} onClick={(e) => this.handleAcceptRequest(e)}>Decline</button>
-              </div>
-            ))}
-          </div>
-          <div>
-            {friends.length > 0 ? 'Friends:' : 'No friends' }
-            {friends.map((request) => (
-              <div key={request.id}>
-                <span>{request.name}</span>
-                {nowPlayingData && <button type="button" data-attr={request.id} onClick={(e) => this.sendInvite(e)}>Invite</button>}
-              </div>
-            ))}
-          </div>
-          <div>
-            {addContactMsg}
-            <input type="text" name="addContact" value={addContact} onChange={(e) => this.handleInput(e)} />
-            <button type="button" onClick={() => this.addContact()}>Add to Contact</button>
-          </div>
-          <div>{contacts && contacts.map((contact) => (<li>{contact}</li>))}</div>
-          <button type="button" onClick={() => this.logoutUser()}>Logout</button>
-        </>
-        )}
+        </CSSTransition>
+        {/* )} */}
       </>
     );
   }

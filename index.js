@@ -399,9 +399,15 @@ app.get('/getFriends', passport.authenticate('jwt', { session: false }), (req, r
     }
     const responseObj = [];
     results.forEach((request) => {
+      let friendName = null;
+      if (request.to === req.user.username) {
+        friendName = request.from;
+      } else {
+        friendName = request.to;
+      }
       const id = encryptAESforURL(request._id.toString(), key);
       responseObj.push({
-        name: request.from,
+        name: friendName,
         id,
       });
     });
@@ -412,14 +418,26 @@ app.get('/getFriends', passport.authenticate('jwt', { session: false }), (req, r
 app.get('/inviteFriend', passport.authenticate('jwt', { session: false }), (req, res) => {
   const key = `Friends: ${req.headers.authorization}`;
   const {
-    id, sessionId, url, movie, provider,
+    id, sessionId, url, movie,
   } = req.query;
+  let provider = '';
+  try {
+    const parsedURL = new URL(url);
+    const domain = parsedURL.hostname.split('.')[1];
+    if (!domain || (domain !== 'primevideo' && domain !== 'netflix') || typeof sessionId !== 'string' || sessionId.length !== 6) {
+      return res.status(400).json();
+    }
+    provider = `${domain.charAt(0).toUpperCase()}${domain.slice(1)}`;
+  } catch {
+    return res.status(400).json();
+  }
   const notificaitonBody = JSON.stringify({
     sessionId,
-    url,
+    url: url.split('?')[0],
     movie,
     provider,
     from: req.user.username,
+    id: uuidv4(),
   });
   const _id = decryptAESforURL(id, key);
   Request.findOne({

@@ -227,7 +227,8 @@
   align-items: center;
   /* display: flex; */
   /* background: #292a2d; */
-  background: rgba(255,255,255,0.05);
+  /* background: rgba(255,255,255,0.05); */
+  background-color: #1e1e1e;
   padding: 5%;
   flex-direction: column;
   width: 90%;
@@ -581,7 +582,7 @@
   /* color: #d43f2a; */
   /* color: #f19e98; */
 }
-/* .BoxShadowHelper-1 {
+.BoxShadowHelper-1 {
   box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
 }
 .BoxShadowHelper-2 {
@@ -595,7 +596,7 @@
 }
 .BoxShadowHelper-5 {
   box-shadow: 0 19px 38px rgba(0,0,0,0.30), 0 15px 12px rgba(0,0,0,0.22);
-} */
+}
 .outlined-button {
   background: rgba(0,0,0,0.2);
   border: solid rgb(156 170 228 / 0.6) 2px;
@@ -797,3 +798,28 @@ label {
   font-size: 13px;
   color: rgba(255,255,255,0.60);
 }
+.popup-logo {
+  padding: 10px 0 45px 0;
+  user-select: none;
+}
+.waves {
+  z-index: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.my-node-enter {
+  opacity: 0;
+}
+.my-node-enter-active {
+  opacity: 1;
+  transition: opacity 1000ms;
+}
+/* .my-node-exit {
+  opacity: 1;
+}
+.my-node-exit-active {
+  opacity: 0;
+  transition: opacity 1000ms;
+} */
