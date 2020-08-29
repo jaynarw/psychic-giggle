@@ -765,21 +765,22 @@
 }
 
 
-#psychick ::-webkit-scrollbar {
-    background-color:transparent;
+* ::-webkit-scrollbar {
+    /* background-color:transparent; */
+    background-color: #121212;
     width:5px;
 }
 
-#psychick ::-webkit-scrollbar-track {
+* ::-webkit-scrollbar-track {
     background-color:transparent;
 }
 
-#psychick ::-webkit-scrollbar-thumb {
+* ::-webkit-scrollbar-thumb {
     background-color:rgba(255,255,255,0.2);
     border-radius:0px;
 }
 
-#psychick ::-webkit-scrollbar-button {
+* ::-webkit-scrollbar-button {
   display:none
 }
 /*  */
@@ -826,7 +827,9 @@ label {
 .container {
   padding: 10px;
   background-color: #121212;
-  height: calc(100% - 65px);
+  /* height: calc(100% - 65px); */
+  height: calc(100vh - 65px);
+  overflow-y: scroll;
 }
 .title {
   padding-top: 10px;
