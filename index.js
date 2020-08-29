@@ -249,7 +249,43 @@ app.post('/register', createAccountLimiter, (req, res, next) => {
     res.status(400).json({ success: false, msg: 'Malformed request' });
   }
 });
-
+app.post('/searchUser', passport.authenticate('jwt', { session: false }), (req, res) => {
+  if (req.body.username) {
+    if (req.body.username === req.user.username) {
+      return res.status(200).json({ success: false });
+    }
+    User.findOne({ username: req.body.username })
+      .then((user) => {
+        if (!user) {
+          return res.status(200).json({ success: false });
+        }
+        if (req.user.username !== req.body.username) {
+          Request.findOne({
+            $or:
+            [
+              { from: req.body.username, to: req.user.username },
+              { to: req.body.username, from: req.user.username },
+            ],
+          }).then((request) => {
+            if (request) {
+              if (request.status !== 1) {
+                if (request.from === req.user.username) {
+                  return res.status(200).json({ success: true, status: 'Already Sent!' });
+                }
+                const key = `${req.headers.authorization}`;
+                const id = encryptAESforURL(request._id.toString(), key);
+                return res.status(200).json({ success: true, id });
+              }
+              return res.status(200).json({ success: true, status: 'Friends' });
+            }
+            return res.status(200).json({ success: true });
+          });
+        }
+      });
+  } else {
+    return res.status(400).json();
+  }
+});
 app.post('/sendRequest', passport.authenticate('jwt', { session: false }), (req, res) => {
   if (req.body.contactToAdd) {
     if (req.body.contactToAdd === req.user.username) {

@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import './components/popup.css';
 import superagent from 'superagent';
 import { CSSTransition } from 'react-transition-group';
+import FriendsCard from './components/popup/FriendsCard';
 import initializeWaves from './waves';
 
 class PopupApp extends React.Component {
@@ -22,6 +23,8 @@ class PopupApp extends React.Component {
       invites: null,
       nowPlayingData: null,
       wavesComplete: false,
+      searchedUser: null,
+      searchStatus: '',
     };
     this.waves = null;
   }
@@ -54,7 +57,8 @@ class PopupApp extends React.Component {
     chrome.storage.local.get(['token', 'username', 'invites'], (result) => {
       if (result.token) {
         document.body.removeChild(document.querySelector('canvas'));
-        document.body.style.backgroundColor = '#121212';
+        document.body.style.backgroundImage = 'none';
+        document.body.style.backgroundColor = '#000';
         this.setState({ token: result.token, wavesComplete: true });
         this.updateFriendRequests();
         this.updateFriends();
@@ -88,7 +92,16 @@ class PopupApp extends React.Component {
 
   handleInput(e) {
     const { target } = e;
+    const { searchedUser, searchStatus } = { ...this.state };
     const { name, value } = target;
+    if (name === 'addContact') {
+      if (searchedUser && searchedUser !== value) {
+        this.setState({ searchedUser: null, searchStatus: '', addContactStatus: '' });
+      }
+      if (searchStatus !== 'Searching') {
+        this.setState({ searchStatus: '', addContactStatus: '' });
+      }
+    }
     this.setState({ [name]: value });
   }
 
@@ -102,6 +115,10 @@ class PopupApp extends React.Component {
         if (typeof res.body === 'object') {
           if (res.body.success) {
             this.waves.submittedForm = true;
+            this.waves.theta = 0;
+            this.waves.thetaRamp = 0;
+            this.waves.thetaRampDest = 48;
+            this.waves.rampDamp = 300;
             chrome.storage.local.set({ token: res.body.token, username }, () => {
               chrome.runtime.sendMessage({ type: 'LoggedIn' });
               this.setState({
@@ -127,7 +144,7 @@ class PopupApp extends React.Component {
     if (target.textContent === 'Decline') {
       queryObj.accept = 'false';
     }
-    superagent.get('https://8efcb897b030.ngrok.io/acceptRequest')
+    return superagent.get('https://8efcb897b030.ngrok.io/acceptRequest')
       .query(queryObj)
       .set('Authorization', token)
       .then((res) => {
@@ -154,6 +171,7 @@ class PopupApp extends React.Component {
             if (res.ok) {
               chrome.storage.local.remove(['token', 'username', 'regToken'], () => {
                 this.setState({ token: null, loggedInUser: null, wavesComplete: false }, () => {
+                  document.body.style.backgroundImage = 'linear-gradient(0deg, rgba(0,0,0,0.4) 0%, rgba(241,158,152,1) 100%)';
                   document.body.style.backgroundColor = '#9CAAE4';
                   this.waves = initializeWaves(() => {
                     this.setState({ wavesComplete: true });
@@ -169,6 +187,8 @@ class PopupApp extends React.Component {
             if (res.ok) {
               chrome.storage.local.remove(['token', 'username', 'regToken'], () => {
                 this.setState({ token: null, loggedInUser: null, wavesComplete: false }, () => {
+                  const url = chrome.runtime.getURL('img/waves.svg');
+                  document.body.style.backgroundImage = 'linear-gradient(0deg, rgba(0,0,0,0.4) 0%, rgba(241,158,152,1) 100%)';
                   document.body.style.backgroundColor = '#9CAAE4';
                   this.waves = initializeWaves(() => {
                     this.setState({ wavesComplete: true });
@@ -184,17 +204,24 @@ class PopupApp extends React.Component {
   addContact() {
     const { addContact, token } = { ...this.state };
     if (addContact.length > 0) {
+      this.setState({ addContactStatus: 'Sending' });
       superagent.post('https://8efcb897b030.ngrok.io/sendRequest').send({
         contactToAdd: addContact,
       }).set('Authorization', token).ok((res) => res.status < 500)
         .then((res) => {
           if (res.body && res.body.success) {
+            this.setState({ addContactStatus: 'Sent' });
             this.setState({ addContactMsg: res.body.msg });
           } else {
+            this.setState({ addContactStatus: 'Failed' });
             this.setState({ addContactMsg: res.body.msg });
           }
         });
     }
+  }
+
+  stateSetter(obj) {
+    this.setState(obj);
   }
 
   acceptInvitation(inviteData) {
@@ -220,9 +247,28 @@ class PopupApp extends React.Component {
       });
   }
 
+  searchUser() {
+    const { token, addContact } = { ...this.state };
+    this.setState({ searchStatus: 'Searching' });
+    superagent.post('https://8efcb897b030.ngrok.io/searchUser')
+      .send({ username: addContact })
+      .set('Authorization', token)
+      .then((res) => {
+        const responseObj = JSON.parse(res.text);
+        if (responseObj.success) {
+          this.setState({ searchStatus: 'Done', searchedUser: {name: addContact, id: responseObj.id, status: responseObj.status} });
+        } else {
+          this.setState({ searchStatus: 'No user found' });
+        }
+      })
+      .catch(() => {
+        this.setState({ searchStatus: 'Search failed' });
+      });
+  }
+
   render() {
     const {
-      token, username, password, loginError, loggedInUser, addContact, contacts, addContactMsg, friendRequests, friends, invites, nowPlayingData, wavesComplete,
+      token, username,addContactStatus, password, loginError, loggedInUser, addContact, contacts, addContactMsg, friendRequests, friends, invites, nowPlayingData, wavesComplete, searchStatus, searchedUser,
     } = { ...this.state };
     const waves = document.querySelector('canvas');
     if (waves) {
@@ -231,7 +277,7 @@ class PopupApp extends React.Component {
     console.log(friends && friends.length > 0 ? 'Friends:' : 'No friends');
     return (
       <>
-        <div className="popup-logo">
+        <div className="popup-logo" style={{ paddingBottom: `${wavesComplete ? '20px' : ''}` }}>
           <div className="logo-bingebox animated logo-chat" id="logo-chat" onMouseEnter={() => this.hoverLogo()}>
             <svg className="popcorn-logo-chat" version="1.0" xmlns="http://www.w3.org/2000/svg" width="298px" height="472px" viewBox="0 0 2980 4720" preserveAspectRatio="xMidYMid meet">
               <g id="layer101" fill="rgba(255,255,255,0.88)" stroke="none">
@@ -251,7 +297,7 @@ class PopupApp extends React.Component {
         {!wavesComplete
           && (
           <>
-            <div className="centered-flex">
+            <div className={`centered-flex ${token ? 'binge-fade-exit-active' : ''}`}>
               <div className="card-psychic BoxShadowHelper-2">
                 <div className="error-desc">{loginError}</div>
                 <label htmlFor="username">Username</label>
@@ -281,11 +327,18 @@ class PopupApp extends React.Component {
           unmountOnExit
           // onExited= {() => }
         >
-          <div>
-            <div>
-              {`Welcome ${loggedInUser}!`}
+          <div className="container">
+            <div className="title">
+              <>
+                {'Welcome '}
+                <span>
+                  {loggedInUser}
+                </span>
+                !
+              </>
             </div>
-            <div>
+            <hr style={{ border: 'solid 1px #1e1e1e' }} />
+            {/* <div>
               {invites && (invites.length > 0 ? 'Invites: ' : 'No invites.. :(')}
               {invites && invites.map((inviteData, ind) => (
                 <div key={inviteData.id}>
@@ -339,7 +392,25 @@ class PopupApp extends React.Component {
               <button type="button" onClick={() => this.addContact()}>Add to Contact</button>
             </div>
             <div>{contacts && contacts.map((contact) => (<li>{contact}</li>))}</div>
-            <button type="button" onClick={() => this.logoutUser()}>Logout</button>
+            <button type="button" onClick={() => this.logoutUser()}>Logout</button> */}
+            <FriendsCard
+              friendRequests={friendRequests}
+              handleAcceptRequest={(e) => this.handleAcceptRequest(e)}
+              isNowPlaying={!!nowPlayingData}
+              friends={friends}
+              sendInvite={(e) => this.sendInvite(e)}
+              handleInput={(e) => this.handleInput(e)}
+              addContact={addContact}
+              stateSetter={() => this.stateSetter()}
+              searchedUser={searchedUser}
+              searchStatus={searchStatus}
+              searchUser={() => this.searchUser()}
+              sendRequest={() => this.addContact()}
+              addContactMsg={addContactMsg}
+              addContactStatus={addContactStatus}
+              invites={invites}
+              acceptInvitation={(inviteData) => this.acceptInvitation(inviteData)}
+            />
           </div>
         </CSSTransition>
         {/* )} */}

@@ -140,7 +140,7 @@
 }
 
 .username-input {
-  padding: 10px!important;
+  padding: 10px;
   height: 40px;
   width: 100%;
   outline: 0;
@@ -823,3 +823,104 @@ label {
   opacity: 0;
   transition: opacity 1000ms;
 } */
+.container {
+  padding: 10px;
+  background-color: #121212;
+  height: calc(100% - 65px);
+}
+.title {
+  padding-top: 10px;
+  padding-right: 10px;
+  font-size: 20px;
+  font-family: 'RadikalMedium', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+.title span {
+  color: #9caae4;
+}
+.card-title {
+  font-size: 20px;
+  color: rgba(255,255,255,0.88);
+  padding: 10px 0;
+  font-weight: bold;
+  font-family: 'RadikalBold', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif !important;
+}
+.card-container {
+  background-color: #282828;
+  padding: 10px;
+  border-radius: 4px;
+}
+/* .card-tabs {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+.card-single-tab {
+  width: 33%;
+  text-align: center;
+  text-transform: uppercase;
+  font-size: 13px;
+  font-family: 'RadikalBold', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif !important;
+  font-weight: normal;
+  color: rgba(255, 255, 255, 0.60);
+} */
+.friend-form {
+  padding: 10px 0;
+}
+.round-outline-button {
+  font-family: 'RadikalBold', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif !important;
+  outline: none;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  padding: 8px 10px 4px 10px;
+  text-align: center;
+  color: #9caae4;
+  border: 2px solid #9caae4;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.10);
+  align-self: center;
+  cursor: pointer;
+  transition: background-color .2s ease-in-out, transform .2s ease-in-out!important;
+  box-sizing: border-box;
+  user-select: none;
+  /* transition: transform .2s ease-in-out!important; */
+}
+.round-primary-button {
+  font-family: 'RadikalBold', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif !important;
+  outline: none;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+  padding: 8px 10px 4px 10px;
+  text-align: center;
+  color: #000000;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.88);
+  align-self: center;
+  cursor: pointer;
+  user-select: none;
+  transition: transform .2s ease-in-out!important;
+}
+.friend-title {
+  flex-grow: 1;
+  align-self: center;
+  font-size: 15px;
+  font-family: 'RadikalMedium', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-weight: bolder;
+
+}
+.round-outline-button:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  transform: scale(1.1);
+  transform-origin: center;
+  
+}
+.round-primary-button:hover {
+  transform: scale(1.1);
+  transform-origin: center;
+}
+.friend-invite:last-child {
+  padding: 3px 0 0 0!important;
+}

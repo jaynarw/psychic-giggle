@@ -62,7 +62,7 @@ class Blob {
     // c.translate(-10, -10);
     // c.scale(0.5, 0.5);
     // c.fillStyle = '#9caae4';
-    c.fillStyle = 'rgba(0,0,0,0.88)';
+    c.fillStyle = '#020303';
     // c.fillStyle = '#f19e98';
     c.beginPath();
     c.moveTo(0, 0);
@@ -71,13 +71,6 @@ class Blob {
     c.lineTo(0, 0);
     c.fill();
     c.restore();
-
-    if (this.submittedForm) {
-      this.theta = 0;
-      this.thetaRamp = 0;
-      this.thetaRampDest = 12;
-      this.rampDamp = 25;
-    }
   }
 
   // update() {
@@ -160,7 +153,12 @@ function calcAvgs(p) {
   avg.push((p[0] + p[leng - 2]) / 2, (p[1] + p[leng - 1]) / 2);
   return avg;
 }
-
+function easeInRadiusUpdate(radius, initialRadius) {
+  const total = window.innerHeight - initialRadius;
+  const travelled = radius - initialRadius;
+  const time = Math.sqrt((travelled / total));
+  return (time + 0.02) * (time + 0.02) * total + initialRadius;
+}
 function initializeWaves(onComplete) {
   const blob = new Blob();
   const { c } = blob;
@@ -168,10 +166,11 @@ function initializeWaves(onComplete) {
     c.clearRect(0, 0, blob.canvas.width, blob.canvas.height);
     blob.update();
     if (blob.submittedForm) {
-      blob.radius += 5;
-      if (blob.radius > window.innerWidth + 100) {
+      blob.radius = easeInRadiusUpdate(blob.radius, blob.initialRadius);
+      if (blob.radius > window.innerWidth + 200) {
         blob.submittedForm = false;
-        document.body.style.backgroundColor = '#121212';
+        document.body.style.backgroundImage = 'none';
+        document.body.style.backgroundColor = '#000';
         document.body.removeChild(blob.canvas);
         onComplete();
       }
