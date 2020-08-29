@@ -829,7 +829,7 @@ label {
   background-color: #121212;
   /* height: calc(100% - 65px); */
   height: calc(100vh - 65px);
-  overflow-y: scroll;
+  overflow-y: auto;
 }
 .title {
   padding-top: 10px;
